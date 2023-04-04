@@ -3370,6 +3370,7 @@ div#chatBody a {
 .directorBlock button {
 	bottom: 0;
 	margin: 10px;
+	border-radius: 50px;
 }
 .directorBlock button i {
 	margin-right: 5px;
