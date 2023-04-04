@@ -1661,6 +1661,7 @@ input[type=range]:focus::-ms-fill-upper {
 
 .popupSelector_constraints{
 	margin:25px 9% 0 7%;
+	border-radius: 50px;
 }
 .popupSelector_constraints label{
 	color:white;
