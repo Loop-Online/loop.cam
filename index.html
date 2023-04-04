@@ -24,36 +24,36 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
 		<meta content="utf-8" http-equiv="encoding" />
-		<meta name="copyright" content="&copy; 2022 Steve Seguin" />
+		<meta name="copyright" content="&copy; 2023 Loop Studio" />
 		<meta name="license" content="https://github.com/steveseguin/vdo.ninja/LICENSE.md" />
 		<meta name="sourcecode" content="https://github.com/steveseguin/vdo.ninja" />
 		<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
-		<link rel="icon" type="image/png" sizes="32x32" href="./media/favicon-32x32.png" />
-		<link rel="icon" type="image/png" sizes="16x16" href="./media/favicon-16x16.png" />
-		<link rel="icon" href="./media/favicon.ico" />
-		<link itemprop="thumbnailUrl" href="./media/vdoNinja_logo_full.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="media/favicon_loopcam 32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="media/favicon_loopcam 16x16.png" />
+		<link rel="icon" href="media/favicon_loopcam.ico" />
+		<link itemprop="thumbnailUrl" href="media/full_logo_loopcam.png" />
 		<!-- Primary Meta Tags -->
-		<title>VDO.Ninja</title>
-		<meta name="title" content="VDO.Ninja" />
-		<meta name="description" content="Bring live video from your smartphone, computer, or friends directly into your Studio. 100% free." />
-		<meta name="author" content="Steve Seguin" />
+		<title>loop.cam</title>
+		<meta name="title" content="loop.cam" />
+		<meta name="description" content="Bring live video from your smartphone, computer, or friends directly into your Studio." />
+		<meta name="author" content="Loop Studio" />
 		<!-- Open Graph / Facebook -->
-		<meta property="og:site_name" content="VDO.Ninja" />
+		<meta property="og:site_name" content="loop.cam" />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://vdo.ninja/" />
-		<meta property="og:title" content="VDO.Ninja" />
-		<meta property="og:description" content="Bring live video from your smartphone, computer, or friends directly into Studio. 100% free." />
+		<meta property="og:title" content="loop.cam" />
+		<meta property="og:description" content="Bring live video from your smartphone, computer, or friends directly into Studio." />
 		<meta property="og:image" itemprop="image" content="https://vdo.ninja/media/vdoNinja_logo_full.png" />
-		<meta name="msapplication-TileImage" content="./media/vdoNinja_logo_full.png" />
+		<meta name="msapplication-TileImage" content="media/full_logo_loopcam.png" />
 		<meta property="og:image:type" content="image/png" />
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<!-- Twitter -->
 		<meta property="twitter:card" content="summary_large_image" />
 		<meta property="twitter:url" content="https://vdo.ninja/" />
-		<meta property="twitter:title" content="VDO.Ninja" />
-		<meta property="twitter:description" content="Bring live video from your smartphone, computer, or friends directly into OBS Studio. 100% free." />
-		<meta property="twitter:image" content="./media/vdoNinja_logo_full.png" />
+		<meta property="twitter:title" content="loop.cam" />
+		<meta property="twitter:description" content="Bring live video from your smartphone, computer, or friends directly into OBS Studio." />
+		<meta property="twitter:image" content="media/full_logo_loopcam.png" />
 		<meta name="msapplication-TileColor" content="#da532c" />
 		<meta name="theme-color" content="#ffffff" />
 		<link rel="stylesheet" href="./main.css?ver=272" />
@@ -74,11 +74,11 @@
 	</head>
 	<body id="main" class="hidden" onload="main()">
 		<span itemprop="image" itemscope itemtype="image/png">
-			<link itemprop="url" href="./media/vdoNinja_logo_full.png" />
+			<link itemprop="url" href="media/full_logo_loopcam.png" />
 		</span>
-		<link itemprop="thumbnailUrl" href="./media/vdoNinja_logo_full.png" />
+		<link itemprop="thumbnailUrl" href="media/full_logo_loopcam.png" />
 		<span itemprop="thumbnail" itemscope itemtype="http://schema.org/ImageObject">
-			<link itemprop="url" href="./media/vdoNinja_logo_full.png" />
+			<link itemprop="url" href="media/full_logo_loopcam.png" />
 		</span>
 		
 		<script type="text/javascript" crossorigin="anonymous"  src="./thirdparty/CodecsHandler.js?ver=45"></script>
@@ -2263,7 +2263,7 @@
 		</audio>
 		<div class="gone" >
 			<!-- This image is used when dragging elements -->
-			<img src="./media/favicon-32x32.png" id="dragImage" loading="lazy" />
+			<img src="media/favicon_loopcam 32x32.png" id="dragImage" loading="lazy" />
 		</div>
 		<div id="request_info_prompt" style="display:none">
 		</div>
@@ -2328,7 +2328,7 @@
 			if (window.location.hostname.indexOf("www.obs.ninja") == 0) {
 				window.location = window.location.href.replace("www.obs.ninja","obs.ninja"); // the session.salt is domain specific; let's consolidate www as a result.
 			} else if (window.location.hostname.indexOf("www.vdo.ninja") == 0) {
-				window.location = window.location.href.replace("www.vdo.ninja","vdo.ninja"); // the session.salt is domain specific; let's consolidate www as a result.
+				window.location = window.location.href.replace("www.vdo.ninja","loop.cam"); // the session.salt is domain specific; let's consolidate www as a result.
 			} else if (("isSecureContext" in window) && (window.isSecureContext===false)){
 				console.error("This site must be run in a secure context; please ensure all links, iframes, and parent windows are using SSL");
 			}
