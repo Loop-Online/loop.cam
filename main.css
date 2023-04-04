@@ -2317,6 +2317,7 @@ img {
 }
 .skip-animation .container-inner{
 	display:block;
+	border-radius: 30px;
 }
 
 .out-animation {
