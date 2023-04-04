@@ -3729,6 +3729,7 @@ a#reshare {
 #joinroomID+button {
 	margin: 0px var(--regular-margin);
 	border-radius: 50px;
+	padding: 10px;
 }
 
 #guestTips {
