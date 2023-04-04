@@ -3324,6 +3324,7 @@ div#chatBody a {
 	padding: 10px;
 	margin: 5px 10px 10px 10px;
 	max-width:100%;
+	border-radius: 50px;
 }
 .directorContainer {
 	background-color: var(--container-color);
