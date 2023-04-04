@@ -4751,7 +4751,7 @@ input:checked + .slider:before {
 	content: "\f630"; }
 
 body.darktheme {
-	color: white;
+	color: black;
 	scrollbar-color: #000 #333;
 }
 body.darktheme form>label{
