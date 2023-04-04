@@ -1805,6 +1805,7 @@ input[type=range]:focus::-ms-fill-upper {
 		max-width: 100%;
 		width: 100%;
 		margin: 4px 0 0 0;
+		border-radius: 10px;
 	}
 }
 
@@ -2970,7 +2971,7 @@ button.toggleSettings{
 	padding: 4px;
 	font-size: 93%;
 	max-width: 100%;
-	border-radius: 50px;
+	border-radius: 10px;
 
 }
 #outputSource3 {
