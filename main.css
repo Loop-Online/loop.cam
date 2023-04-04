@@ -25,7 +25,7 @@
 	--background-main-image: unset;
 	--show-codirectors: inline-block;
 	--full-screen-button: inherit;
-	--color-mode: light;
+	--color-mode: dark;
 	--video-background-image-size: auto 30%;
 }
 @media (prefers-color-scheme: dark) {
