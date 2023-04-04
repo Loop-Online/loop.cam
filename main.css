@@ -549,6 +549,7 @@ body.darktheme .credits>a:visited {
 
 .chevron {
 	padding: 0px 6px;
+	color: white;
 }
 
 .chevron::before {
