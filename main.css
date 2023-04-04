@@ -3074,7 +3074,6 @@ div.multiselect {
 	font-size: 120%;
 	padding: 2px;
 	overflow: hidden;
-	border-radius: 10px;
 }
 .select .select-trigger:hover {
 	cursor: pointer;
