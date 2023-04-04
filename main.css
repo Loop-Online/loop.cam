@@ -2999,6 +2999,7 @@ button.toggleSettings{
 	vertical-align: middle;
 	text-align: left;
 	margin: 0 0 15px 0;
+	border-radius: 50px;
 }
 
 .audioMenu{
