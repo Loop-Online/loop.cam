@@ -1113,10 +1113,9 @@ button.glyphicon-button.active.focus {
 .gobutton {
 	font-size: 110%;
 	padding: 10px;
-	border: 3px solid #DDDDDD;
 	cursor: pointer;
-	background-color: #99BFD9;
-	color: black;
+	background-color: #3666F2;
+	color: white;
 	font-weight: bold;
 	
 }
