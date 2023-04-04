@@ -1771,7 +1771,7 @@ input[type=range]:focus::-ms-fill-upper {
 	div.multiselect, .videoMenu, #videoSettings {
 		max-width: 100% !important;
 		min-width: 100% !important;
-		border-radius: 20px;
+		border-radius: 10px;
 
 	}
 	#addPasswordBasic, #headphonesDiv, #effectsDiv, #effectsDiv3, #headphonesDiv3  {
@@ -2001,7 +2001,7 @@ label {
 
 
 .container-inner > div, .container-inner > span > div, .container-inner button:not(.gowebcam), .message-card, .cameraTip {
-    border-radius: 30px;
+    border-radius: 100px;
     box-shadow: 10px 8px 32px -10px #8883;
 }
 
@@ -2996,7 +2996,7 @@ button.toggleSettings{
 	padding: 10px 10px;
 	border: 1px solid #ccc;
 	vertical-align: middle;
-	border-radius: 50px;
+	border-radius: 10px;
 
 }
 
