@@ -549,7 +549,6 @@ body.darktheme .credits>a:visited {
 
 .chevron {
 	padding: 0px 6px;
-	color: white;
 }
 
 .chevron::before {
@@ -4766,7 +4765,7 @@ body.darktheme input{
 	background-color: #ccc;
 }
 body.darktheme .column>h2{
-	color: #b6b6b6;
+	color: black;
 }
 body.darktheme .multiselect .multiselect-contents {
 	background-color:unset;
