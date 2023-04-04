@@ -2001,7 +2001,7 @@ label {
 
 
 .container-inner > div, .container-inner > span > div, .container-inner button:not(.gowebcam), .message-card, .cameraTip {
-    border-radius: 5px;
+    border-radius: 30px;
     box-shadow: 10px 8px 32px -10px #8883;
 }
 
@@ -2162,6 +2162,7 @@ span[data-action-type="stats-graphs-details-container"]>span{
 	max-height: 100%;
 	min-height: 90%;
 	margin-bottom:30px;
+	border-radius: 30px;
 }
 .canvasStats{
 	background-color: black;
