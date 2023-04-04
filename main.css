@@ -1771,7 +1771,7 @@ input[type=range]:focus::-ms-fill-upper {
 	div.multiselect, .videoMenu, #videoSettings {
 		max-width: 100% !important;
 		min-width: 100% !important;
-		border-radius: 50px;
+		border-radius: 20px;
 
 	}
 	#addPasswordBasic, #headphonesDiv, #effectsDiv, #effectsDiv3, #headphonesDiv3  {
