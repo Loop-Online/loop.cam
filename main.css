@@ -2001,7 +2001,7 @@ label {
 
 
 .container-inner > div, .container-inner > span > div, .container-inner button:not(.gowebcam), .message-card, .cameraTip {
-    border-radius: 100px;
+    border-radius: 10px;
     box-shadow: 10px 8px 32px -10px #8883;
 }
 
