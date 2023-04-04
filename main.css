@@ -4128,6 +4128,7 @@ div.message-card.info:before {
 	-webkit-transition: .3s;
 	transition: .3s;
 	position: absolute;
+	border-radius: 50px;
 }
 
 input:checked + .slider {
