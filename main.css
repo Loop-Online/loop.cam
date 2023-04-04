@@ -3695,6 +3695,7 @@ div#guestFeeds {
 	padding: 5px 0 15px 20px;
 	display: inline-block;
 	margin: 0px var(--regular-margin) 80px var(--regular-margin);
+	border-radius: 50px;
 }
 
 div#guestFeeds:empty {
