@@ -3010,7 +3010,7 @@ button.toggleSettings{
 	border: 1px solid #ccc;
 	vertical-align: middle;
 	text-align: left;
-	border-radius: 50px;
+	border-radius: 10px;
 
 }
 #videoMenu3{
@@ -3023,7 +3023,7 @@ button.toggleSettings{
 	vertical-align: middle;
 	text-align: left;
 	margin: 0 0 15px 0;
-	border-radius: 50px;
+	border-radius: 10px;
 }
 
 .audioMenu{
@@ -3036,7 +3036,7 @@ button.toggleSettings{
 	padding: 10px;
 	border: 1px solid rgb(204, 204, 204);
 	vertical-align: middle;
-	border-radius: 50px;
+	border-radius: 10px;
 
 }
 
@@ -3055,7 +3055,7 @@ div.multiselect {
 .form-group .multiselect {
 	padding: 10px;
 	background-color:#f3f3f3;
-	border-radius: 50px;
+	border-radius: 10px;
 
 }
 .multiselect .multiselect-contents {
@@ -3074,7 +3074,7 @@ div.multiselect {
 	font-size: 120%;
 	padding: 2px;
 	overflow: hidden;
-	border-radius: 50px;
+	border-radius: 10px;
 }
 .select .select-trigger:hover {
 	cursor: pointer;
