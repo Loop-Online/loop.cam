@@ -4115,6 +4115,7 @@ div.message-card.info:before {
 	-webkit-transition: .3s;
 	transition: .3s;
 	position: absolute;
+	border-radius: 10%;
 }
 
 .slider:before {
