@@ -1569,6 +1569,8 @@ select{
 	font-size: 93%;
 	max-width: 100%;
 	width: 90%;
+	border-radius: 50px;
+
 }
 
 /*https://css-tricks.com/styling-cross-browser-compatible-range-inputs-css/*/
@@ -1767,6 +1769,8 @@ input[type=range]:focus::-ms-fill-upper {
 	div.multiselect, .videoMenu, #videoSettings {
 		max-width: 100% !important;
 		min-width: 100% !important;
+		border-radius: 50px;
+
 	}
 	#addPasswordBasic, #headphonesDiv, #effectsDiv, #effectsDiv3, #headphonesDiv3  {
 		max-width: 100% !important;
@@ -2770,6 +2774,8 @@ audio.fileshare::-webkit-media-controls-play-button, video.fileshare::-webkit-me
 	padding: 10px 10px;
 	border: 1px solid #ccc;
 	vertical-align: middle;
+	border-radius: 50px;
+
 }
 #headphonesDiv {
 	width: 450px;
@@ -2811,6 +2817,8 @@ button.toggleSettings{
 	padding: 10px 10px;
 	border: 1px solid #ccc;
 	vertical-align: middle;
+	border-radius: 50px;
+
 }
 #effectsDiv3 {
 	text-align: left;
@@ -2820,6 +2828,8 @@ button.toggleSettings{
 	border: 1px solid #ccc;
 	vertical-align: middle;
 	margin: 17px 0 0 0;
+	border-radius: 50px;
+
 }
 #avatarDiv3 {
 	text-align: left;
@@ -3037,6 +3047,8 @@ div.multiselect {
 	display: inline-block;
 	padding: 4px 10px 10px 10px;
 	background-color: #f3f3f3;
+	border-radius: 50px;
+
 }
 .form-group .multiselect {
 	padding: 10px;
@@ -3060,6 +3072,7 @@ div.multiselect {
 	font-size: 120%;
 	padding: 2px;
 	overflow: hidden;
+	border-radius: 50px;
 }
 .select .select-trigger:hover {
 	cursor: pointer;
