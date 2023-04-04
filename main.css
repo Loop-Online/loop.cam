@@ -2942,6 +2942,8 @@ button.toggleSettings{
 	border: 1px solid #ccc;
 	font-size: 90%;
 	margin: 10px 0 0 0;
+	border-radius: 50px;
+
 }
 #videoSource3 {
 	display: inline-block;
@@ -2949,6 +2951,8 @@ button.toggleSettings{
 	padding: 3px;
 	font-size: 93%;
 	max-width: 235px;
+	border-radius: 50px;
+
 }
 #outputSource {
 	display: inline-block;
@@ -2956,6 +2960,8 @@ button.toggleSettings{
 	padding: 4px;
 	font-size: 93%;
 	max-width: 100%;
+	border-radius: 50px;
+
 }
 #outputSource3 {
 	display: inline-block;
@@ -2963,6 +2969,8 @@ button.toggleSettings{
 	padding: 3px;
 	font-size: 93%;
 	max-width: 100%;
+	border-radius: 50px;
+
 }
 #addPasswordBasic {
 	width: 450px;
@@ -2978,6 +2986,8 @@ button.toggleSettings{
 	padding: 10px 10px;
 	border: 1px solid #ccc;
 	vertical-align: middle;
+	border-radius: 50px;
+
 }
 
 .videoMenu {
@@ -2988,6 +2998,8 @@ button.toggleSettings{
 	border: 1px solid #ccc;
 	vertical-align: middle;
 	text-align: left;
+	border-radius: 50px;
+
 }
 #videoMenu3{
 	background-color: #f3f3f3;
@@ -3012,6 +3024,8 @@ button.toggleSettings{
 	padding: 10px;
 	border: 1px solid rgb(204, 204, 204);
 	vertical-align: middle;
+	border-radius: 50px;
+
 }
 
 div.multiselect {
@@ -3027,6 +3041,8 @@ div.multiselect {
 .form-group .multiselect {
 	padding: 10px;
 	background-color:#f3f3f3;
+	border-radius: 50px;
+
 }
 .multiselect .multiselect-contents {
 	display: block;
