@@ -3417,6 +3417,7 @@ div#roomnotes2 {
 	padding: 10px !important;
 	margin: 0 var(--regular-margin) 10px var(--regular-margin);
 	width: 100%;
+	border-radius: 50px;
 }
 .directorsgrid .directorContainer:nth-child(2) button {
 	grid-row: 1;
