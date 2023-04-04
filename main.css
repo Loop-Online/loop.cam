@@ -1900,7 +1900,6 @@ input[type=range]:focus::-ms-fill-upper {
 	min-width: 350px;
 	display: none;
 	padding: 4px 10px 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	margin: 10px 0;
 	text-align: left;
@@ -2774,7 +2773,6 @@ audio.fileshare::-webkit-media-controls-play-button, video.fileshare::-webkit-me
 	width: 450px;
 	background-color: #f3f3f3;
 	padding: 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	border-radius: 10px;
 
@@ -2782,7 +2780,6 @@ audio.fileshare::-webkit-media-controls-play-button, video.fileshare::-webkit-me
 #headphonesDiv {
 	width: 450px;
 	background-color: #f3f3f3;
-	border: 1px solid #ccc;
 }
 button.toggleSettings{
 	width: 135px;
@@ -2817,7 +2814,6 @@ button.toggleSettings{
 	background-color: #f3f3f3;
 	display: none;
 	padding: 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	border-radius: 10px;
 
@@ -2827,7 +2823,6 @@ button.toggleSettings{
 	width: 450px;
 	background-color: #f3f3f3;
 	padding: 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	margin: 17px 0 0 0;
 	border-radius: 10px;
@@ -2848,7 +2843,6 @@ button.toggleSettings{
 	width: 450px;
 	padding: 10px 0;
 	margin: 0px 0 0px 0;
-	border: 1px solid #ccc;
 }
 #audioMenu {
 	margin: 15px 0 0 0;
@@ -3007,7 +3001,6 @@ button.toggleSettings{
 	width: 450px;
 	display: inline-block;
 	padding: 5px 10px 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	text-align: left;
 	border-radius: 10px;
@@ -3019,7 +3012,6 @@ button.toggleSettings{
 	max-width:100%;
 	display: block;
 	padding: 10px 10px;
-	border: 1px solid #ccc;
 	vertical-align: middle;
 	text-align: left;
 	margin: 0 0 15px 0;
@@ -3094,7 +3086,6 @@ div.multiselect {
 	display: none;
 	margin: 0;
 	padding: 0 24px 24px;
-	border: 1px solid #ccc;
 	border-top: 0;
 	border-bottom-left-radius: 4px;
 	border-bottom-right-radius: 4px;
