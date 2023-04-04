@@ -11,9 +11,9 @@
 	--director-margin: 15px 20px 0 0;
 	--fit-style: contain;
 	--fadein-speed: 0;
-	--video-margin: 30px;
+	--video-margin: 0px;
 	--video-rounded: 30px;
-	--video-border: 30px;
+	--video-border: px;
 	--video-border-color: #0000;
 	--video-rounded: 30px;
 	--button-radius: 50px;
