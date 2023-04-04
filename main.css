@@ -3377,6 +3377,7 @@ div#chatBody a {
 a.task {
 	width: 100%;
 	margin-top: 10px;
+	border-radius: 50px;
 }
 .directorBlock h2 {
 	text-transform: uppercase;
