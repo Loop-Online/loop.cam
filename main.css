@@ -12,11 +12,11 @@
 	--fit-style: contain;
 	--fadein-speed: 0;
 	--video-margin: 0px;
-	--video-rounded: 0px;
+	--video-rounded: 30px;
 	--video-border: 0px;
 	--video-border-color: #0000;
-	--video-rounded: 0px;
-	--button-radius: 2px;
+	--video-rounded: 30px;
+	--button-radius: 50px;
 	--myvideo-max-width: min(800px,100vw);
 	--myvideo-width:unset;
 	--myvideo-height:auto;
