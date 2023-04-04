@@ -702,6 +702,7 @@ hr {
 	background: ffff;
 	color: ffff;
 	vertical-align: top;
+	border-radius: 20px;
 }
 
 .directorBox {
