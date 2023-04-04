@@ -2305,6 +2305,7 @@ img {
 	animation: inlightbox 0.5s forwards;
 	position: fixed !important;
 	margin: 0 !important;
+	border-radius: 30px;
 }
 
 .skip-animation {
