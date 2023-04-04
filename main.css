@@ -3723,8 +3723,8 @@ a#reshare {
 }
 
 #joinroomID {
-	border-radius: 0;
-	padding: 5px;
+	border-radius: 50px;
+	padding: 10px;
 }
 #joinroomID+button {
 	margin: 0px var(--regular-margin);
