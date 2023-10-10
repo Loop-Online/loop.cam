@@ -102,9 +102,9 @@
 
 				<img src="https://i.imgur.com/7yZRk2u.png" id="logo"/>
 			  
-				<input type="text" autocorrect="off" autocapitalize="none" id="joinroomID" name="joinroomID" tabindex="1" size="22" placeholder="Join by Room Name here" alt="Enter a room name to join" title="Enter a room name to quick join" onkeyup="jumptoroom(event)"/>
+				<input type="text" id="joinroomID" placeholder="Join by Room Name here"/>
 			  
-				<button onclick="jumptoroom();" id="jumptoroomButton" role="button" aria-pressed="false" tabindex="1" alt="Join room" title="Join room">GO</button>
+				<button id="jumptoroomButton">GO</button>
 			  
 			  </div>
 			  
@@ -123,9 +123,14 @@
 			  
 			  #joinroomID {
 				padding: 8px;
-				min-height: 36px;
+				min-height: 36px; 
 				box-sizing: border-box;
-				flex: 1; 
+				flex: 1;
+				background-color: #323338; 
+			  }
+			  
+			  #joinroomID::placeholder {
+				color: white; 
 			  }
 			  
 			  #jumptoroomButton {
