@@ -100,11 +100,41 @@
 			</a>
 			<div id="head1">
 
+				<img src="logo.png" id="logo"/>
+			  
 				<input type="text" autocorrect="off" autocapitalize="none" id="joinroomID" name="joinroomID" tabindex="1" size="22" placeholder="Join by Room Name here" alt="Enter a room name to join" title="Enter a room name to quick join" onkeyup="jumptoroom(event)"/>
 			  
-				<button onclick="jumptoroom();" id='jumptoroomButton' role="button" aria-pressed="false" tabindex="1" alt="Join room" title="Join room" >GO</button>
+				<button onclick="jumptoroom();" id="jumptoroomButton" role="button" aria-pressed="false" tabindex="1" alt="Join room" title="Join room">GO</button>
 			  
 			  </div>
+			  
+			  <style>
+			  
+			  #logo {
+				height: 36px;
+				margin-right: 8px;
+			  }
+			  
+			  #head1 {
+				display: flex;
+				align-items: center;
+				padding: 16px;
+			  }
+			  
+			  #joinroomID {
+				padding: 8px;
+				min-height: 36px;
+				box-sizing: border-box;
+				flex: 1; 
+			  }
+			  
+			  #jumptoroomButton {
+				padding: 8px;
+				height: 36px;
+				box-sizing: border-box;
+			  }
+			  
+			  </style>
 			  
 			  <style>
 			  
@@ -711,40 +741,6 @@
 			</div>
 			
 			<div id="dropButton" onclick="dropDownButtonAction()" title="More Options" aria-hidden="true"><i class="las la-chevron-down" ></i></div>
-			
-			<div id="container-5" class="column columnfade pointer rounded card hidden" style=" overflow-y: auto;">
-				<h2><span data-translate="share-local-video-file">Stream Media File</span></h2>
-				<div class="container-inner">
-					
-					<br /><br />
-					<span data-translate="select-the-video-files-to-share">SELECT THE VIDEO FILES TO SHARE</span><br /><br />
-					<input id="fileselector" onchange="session.publishFile(this,event);" type="file" accept="video/*,audio/*" alt="Hold CTRL (or CMD) to select multiple files" title="Hold CTRL (or CMD) to select multiple files" multiple/>
-					<br /><br />
-					<div class='warning message-card'>
-						<h1>Warning</h1>
-						<p>Media file streaming is still quite experimental. Please do not rely on it heavily for your productions. Feedback welcome.</p>
-					</div>
-					<div class='warning message-card hidden' id='chrome_warning_fileshare'>
-						<h1>Chrome/Edge users</h1>
-						<p>Keep this tab visible, else the video playback will stop</p>
-					</div>
-					<div class='warning message-card hidden' id='safari_warning_fileshare'>
-						<h1>Safari Users</h1>
-						<p>Safari does not support this feature. Consider Chrome or Firefox instead.</p>
-					</div>
-					<br /><br />
-					To host a file for download, rather than for streaming, try the following instead: 
-					<input id="fileselector2" onchange="session.hostFile(this,event);" type="file" title="Transfer any file"/>
-				</div>
-				
-				<div class="outer close">
-					<div class="inner">
-						<label class="labelclass">
-							<span data-translate="back">Back</span>
-						</label>
-					</div>
-				</div>
-			</div>
 			
 			<p></p>
 			
