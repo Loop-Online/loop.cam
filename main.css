@@ -64,8 +64,8 @@
 	--codirector-dark-box: rgb(129 127 127);
 
 	/* Original colors */
-	--background-color: #141926;
-	--dark-background-color: #02050c;
+	--background-color: #171717;
+	--dark-background-color: #171717;
 	--container-color: #373737;
 	--button-color: #2A2A2A;
 	--blue-accent: #4a4c63;
@@ -423,7 +423,7 @@ button.hint {
 #header {
 	width: 100%;
 	padding: 1px;
-	background-color: #0F131D;
+	background-color: #171717;
 	color: #FFF;
 	-webkit-app-region: drag;
 }
