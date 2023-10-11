@@ -82,7 +82,8 @@ var miscTranslations = { // i can replace this list from time to time from the g
     "share-a-screen": "Share a screen",
     "stop-screen-sharing": "Stop screen sharing",
     "you-have-been-transferred": "You've been transferred to a different room",
-    "you-have-been-activated": "The director has allowed you to see others in the room now",
+    "you-have-been-activated": "The director has now allowed you to see others in the room",
+	"you-not-yet-activated": "Please wait until the director brings you into the room",
     "you-are-no-longer-a-co-director": "You are no longer a co-director as you were transferred.",
     "transferred": "Transferred",
     "room-changed": "Your room has changed",
@@ -1045,7 +1046,22 @@ function youveBeenTransferred(){
 }
 
 function youveBeenActivated(){
-	getChatMessage( getTranslation("you-have-been-activated"), label = false, director = false, overlay = true); // "you-have-been-transferred"
+	if (session.queueType==3){ // session.queue is now set to false
+		getById("overlayMsgs").innerText = "";
+		for (var UUID in session.pcs){
+			if (session.pcs[UUID].needsPublishing){
+				session.initialPublish(UUID); // let's starts publishing now
+			}
+		}
+	} else if (session.queueType==4){
+		getById("overlayMsgs").innerText = "";
+	}
+	getChatMessage( getTranslation("you-have-been-activated"), label = false, director = false, overlay = true);
+	hideHomeCheck();
+}
+
+function youreWaitingToBeActivated(){
+	getChatMessage( getTranslation("you-not-yet-activated"), label = false, director = false, overlay = true);
 	hideHomeCheck();
 }
 
@@ -3309,6 +3325,14 @@ function setupIncomingVideoTracking(v, UUID){  // video element.
 			return;
 		} // if Audio only, then we don't want to set or update any aspect ratio.
 		
+		if (session.keepIncomingVideosInLandscape){
+			if (aspectRatio < 1){ // session.keepIncomingVideosInLandscape
+				v.rotated = session.keepIncomingVideosInLandscape;
+			} else {
+				v.rotated = 0;
+			}
+		}
+		
 		if (v.resetAR){
 			log("ASPECT RATIO UNMUTED");
 			delete(v.resetAR);
@@ -3328,6 +3352,8 @@ function setupIncomingVideoTracking(v, UUID){  // video element.
 			pokeIframeAPI("aspect-ratio", v.dataset.aspectRatio, v.dataset.UUID, v.dataset.sid);
 			setTimeout(function(){updateMixer();},1);
 		}
+		
+		
 	});
 	
 	if (typeof session.volume == "number"){
@@ -3911,8 +3937,43 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 		
 		if (session.pipWindow){
 			var hi = 0;
-			var w = session.pipWindow.innerWidth;
-			var h = session.pipWindow.innerHeight;
+			var w = session.pipWindow.clientHeight;
+			var h = session.pipWindow.clientWidth;
+		} else if (document.body.dataset.rotated){
+			var hi = header.offsetHeight;
+			var w = document.body.clientHeight;
+			
+			if (session.widget){
+				w *= 0.75;
+				try {
+					let widget = document.getElementById("widget");
+					if (!widget){
+						widget = document.createElement("iframe");
+						widget.allow = "autoplay;camera;microphone;fullscreen;picture-in-picture;display-capture;midi;";
+						widget.id = "widget";
+						widget.src = parseURL4Iframe(session.widget);
+						log(widget.src);
+						document.body.appendChild(widget);
+						playarea.style.left = "0";
+						playarea.style.width = "75%";
+					} 
+					widget.style.height = "calc(100% - " +hi + "px)";
+					widget.style.top = hi;
+				} catch(e){
+					errorlog(e);
+				}
+			}
+			
+			var h = document.body.clientWidth - hi;
+			if (session.dedicatedControlBarSpace || document.body.clientWidth<=700 ){ // # This needs to be reviewed.
+				if (session.dedicatedControlBarSpace!==false){
+					if (document.getElementById("subControlButtons") && !session.overlayControls){
+						if (!document.getElementById("subControlButtons").yOffset || (document.getElementById("subControlButtons").yOffset>-10)){
+							h = document.body.clientWidth - hi - document.getElementById("subControlButtons").offsetHeight;
+						}
+					}
+				}
+			}
 		} else {
 			var hi = header.offsetHeight;
 			var w = window.innerWidth;
@@ -4094,9 +4155,9 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				}
 				
 				if (soloVideo!==false){
-					session.screenShareElement.style.display="none";
+					//session.screenShareElement.style.display="none";
 				} else if (session.activeSpeaker && (!session.activelySpeaking)){
-					session.screenShareElement.style.display="none";
+					//session.screenShareElement.style.display="none";
 				} else {
 					mediaPool.push(session.screenShareElement);
 				}
@@ -5211,6 +5272,14 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				return;
 			}
 			
+			if (vid.needsLoading){
+				try {
+					vid.load();
+				} catch(e){
+					errorlog(e);
+				}
+			}
+			
 			if (session.slots){
 				if (("slot" in vid) && parseInt(vid.slot)){
 					i = parseInt(vid.slot) - 1;
@@ -5484,7 +5553,7 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 			
 			// log(vw + " : "+vh);
 			
-			if (cover){
+			if (cover && !session.structure){ //////
 				if ((("rotated" in vid) && ((vid.rotated==90) || (vid.rotated==270)))){
 					holder.style.left = borderOffset + "px";
 					holder.style.top = borderOffset + "px";
@@ -5542,6 +5611,7 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				holder.style.borderRadius = borderRadius+"px";
 				
 			} else if ((vw && vh) || (vid.width && vid.height) || vid.dataset.aspectRatio){
+				
 				if (("rotated" in vid) && ((vid.rotated==90) || (vid.rotated==270))){
 					if (vw && vh){
 						var vvw = parseInt(vh);
@@ -5574,7 +5644,7 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				var asw = (wrw - videoMargin*2 - borderOffset*2)/vvw;  // (window.innerWidth/ N)  /  vid.videoHeight;
 				var ash = (hrh - videoMargin*2 - borderOffset*2)/vvh;
 				
-				if (session.structure){
+				if (session.structure){ 
 					// wrw x hrh
 					var arx = (wrw - videoMargin*2 - borderOffset*2)/(hrh - videoMargin*2 - borderOffset*2);
 					var tarx = arW/arH;
@@ -5782,7 +5852,10 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 					label.style.fontSize = parseInt(fontsize)+"px";
 				}
 				label.innerText = session.rpcs[vid.dataset.UUID].label;
-				
+				if (label.innerText){
+					//label.innerHTML = label.innerHTML.replace(/\\n/g,"<br />");
+					label.innerHTML = label.innerHTML.split("\\n").map(word => `<span>${word}</span>`).join(" ");
+				}
 			} else if ((session.showlabels===true) &&  (vid.id === "videosource") && (session.label)){  // local source
 				// creates a label holder that's the same size of the vid element.
 				
@@ -5823,6 +5896,11 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				}
 				
 				label.innerText = sanitizeLabel(session.label);//.replace(/[\W]+/g,"_").replace(/_+/g, ' ');
+				
+				if (label.innerText){
+					label.innerHTML = label.innerHTML.split("\\n").map(word => `<span>${word}</span>`).join(" ");
+				}
+				
 				holder.appendChild(label);
 			} else if (holder.label){
 				 holder.label.remove();
@@ -6782,6 +6860,13 @@ session.remoteZoom = function(zoom){
 				warnlog("No zoom supported on this device");
 				return;
 			}
+			if (("min" in capabilities.zoom) && ("max" in capabilities.zoom)){
+				if (capabilities.zoom.max === capabilities.zoom.min){
+					warnlog("zoom only has one fixed setting");
+				}
+				return;
+			}
+			
 			if (session.zoom==false){
 				session.zoom = capabilities.zoom.min;
 			}
@@ -7761,7 +7846,7 @@ function updateUserList(){
 					
 					var insert = document.createElement("div");
 					if (session.rpcs[UUID].label){
-						insert.innerText = session.rpcs[UUID].label + "";
+						insert.innerText = session.rpcs[UUID].label.split("\\n")[0] + "";
 					} else if (session.directorList.indexOf(UUID)>=0){
 						miniTranslate(insert,"director");
 						//insert.innerHTML = getTranslation("director");
@@ -10588,7 +10673,7 @@ function printMyStats(menu, screenshare=false) { // see: setupStatsMenu
 		}
 		
 	}
-	if ((iOS) || (iPad)){
+	if (iOS || iPad){
 		menu.innerHTML += "<br /><div style='height:100px'></div>";
 	}
 	try {
@@ -11627,7 +11712,7 @@ function toggleSpeakerMute(apply = false) { // TODO: I need to have this be MUTE
 		pokeAPI("speakerMuted", session.speakerMuted);
 	}
 	
-	if ((iOS) || (iPad)) {
+	if (iOS || iPad) {
 		resetupAudioOut();
 	}
 }
@@ -14256,16 +14341,19 @@ function updateForceRotate(skipLastBit=false){
 	}
 }
 
-function updateForceRotatedCSS(){
-	var rotateThis = session.forceRotate;
+function updateForceRotatedCSS(rotateThis=session.forceRotate){
 	if (rotateThis==270){
 		document.body.setAttribute( "style", "transform: rotate(270deg);position: absolute;top: 100vh;left: 0;height: 100vw;width: 100vh;transform-origin: 0 0;");
+		document.body.dataset.rotated = "1";
 	} else if (rotateThis==90){
 		document.body.setAttribute( "style", "transform: rotate(90deg);position: absolute;top: 0;left: 100vw;height: 100vw;width: 100vh;transform-origin: 0 0;");
+		document.body.dataset.rotated = "1";
 	} else if (rotateThis==180){
 		document.body.setAttribute( "style", "transform: rotate(180deg);position: absolute;top: 100vh;left: 100vw;height: 100vh;width: 100vw;transform-origin: 0 0;"); 
+		document.body.dataset.rotated = ""
 	} else {
 		document.body.setAttribute( "style", "");
+		document.body.dataset.rotated = ""
 	}
 }
 
@@ -15115,7 +15203,7 @@ session.publishIFrame = function(iframeURL){
 } // publishIframe
 
 
-session.publishWhepSrc = function(){
+/* session.publishWhepSrc = function(){
 	
 	if (!session.whepSrc){errorlog("no WHEP Src");return;}
 	
@@ -15226,7 +15314,7 @@ session.publishWhepSrc = function(){
 	session.seedStream();
 	
 	return container;
-} // publishWhepSrc
+} // publishWhepSrc */
 
 
 function outboundAudioPipeline(){ // this function isn't letting me change the audio source
@@ -16287,8 +16375,10 @@ function joinRoom(roomname) {
 								var streamID = session.desaltStreamID(response[i].streamID);
 								if (session.queue){
 									if (session.directorList.indexOf(response[i].UUID)>=0){
-										warnlog("PLAYING DIRECTOR");
-										play(streamID, response[i].UUID);
+										if (session.queueType==2){
+											warnlog("PLAYING DIRECTOR");
+											play(streamID, response[i].UUID);
+										}
 									} else if (session.view_set && session.view_set.includes(streamID)){
 										play(streamID, response[i].UUID);
 									} else if (session.queueList.length<5000){
@@ -16317,7 +16407,9 @@ function joinRoom(roomname) {
 								var streamID = session.desaltStreamID(response[i].streamID);
 								if (session.queue){
 									if (session.directorList.indexOf(response[i].UUID)>=0){
-										play(streamID, response[i].UUID);
+										if (session.queueType==2){
+											play(streamID, response[i].UUID);
+										}
 									} else if (session.view_set && session.view_set.includes(streamID)){
 										play(streamID, response[i].UUID);
 									} else if (session.queueList.length<5000){
@@ -18588,7 +18680,7 @@ function requestOutputAudioStream() {
 		if (!(session.cleanOutput)) {
 			if (window.isSecureContext) {
 				warnUser("An error has occured when trying to access the default audio device. The reason is not known.");
-			} else if ((iOS) || (iPad)) {
+			} else if (iOS || iPad) {
 				warnUser("iOS version 13.4 and up is generally recommended; older than iOS 11 is not supported.");
 			} else {
 				warnUser("Error acessing the default audio device.\n\nThe website may be loaded in an insecure context.\n\nPlease see: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia");
@@ -18652,7 +18744,7 @@ async function requestAudioStream() {
 		if (!(session.cleanOutput)) {
 			if (window.isSecureContext) {
 				warnUser("An error has occured when trying to access the default audio device. The reason is not known.");
-			} else if ((iOS) || (iPad)) {
+			} else if (iOS || iPad) {
 				warnUser("iOS version 13.4 and up is generally recommended; older than iOS 11 is not supported.");
 			} else {
 				warnUser("Error acessing the default audio device.\n\nThe website may be loaded in an insecure context.\n\nPlease see: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia");
@@ -19867,7 +19959,7 @@ function gotDevices2(deviceInfos) {
 		audioOutputSelect.onchange = function() {
 			log("audioOutputSelect.onchange = function() {");
 
-			if ((iOS) || (iPad)) {
+			if (iOS || iPad) {
 				return;
 			}
 			
@@ -20085,7 +20177,7 @@ function playtone(screen = false, tonename="testtone") {
 	},500);
 	timeoutTone = true;
 
-	if ((iOS) || (iPad)) {
+	if (iOS || iPad) {
 		//	try{
 		//		session.audioContext.resume();
 		//	} catch(e){errorlog(e);}
@@ -20462,7 +20554,7 @@ function reconnectDevices(event) { ///  TODO: Perhaps change this to only if the
 
 	warnlog("A media device has changed");
 	
-	if ((iOS) || (iPad)) { // consider adding this back, but if no problem, whatever.
+	if (iOS || iPad) { // consider adding this back, but if no problem, whatever.
 		return;
 	}
 	
@@ -22272,7 +22364,7 @@ async function grabVideo(quality = 0, eleName = 'previewWebcam', selector = "sel
 
 		if (session.facingMode){
 			constraints.video.facingMode = { exact: session.facingMode }; // user or environment
-		} else if ((iOS) || (iPad)) {
+		} else if (iOS || iPad) {
 			constraints.video.deviceId = {
 				exact: videoSelect.value
 			}; // iPhone 6s compatible ? Needs to be exact for iPhone 6s
@@ -24281,6 +24373,8 @@ session.postPublish = async function(){
 	if (session.welcomeMessage){
 		stickyMessage(session.welcomeMessage);
 		// getChatMessage(session.welcomeMessage, false, true, true);
+	} else if (session.queue && ((session.queueType==3) || (session.queueType==4)) && !session.director){
+		youreWaitingToBeActivated();
 	}
 	
 	if (session.welcomeImage){
@@ -25436,6 +25530,7 @@ function dragElement(elmnt) {
 	}
 	
 	function elementDrag(e) {
+		
 		e = e || window.event;
 		e.preventDefault();
 		// calculate the new cursor position:
@@ -25447,6 +25542,8 @@ function dragElement(elmnt) {
 		
 		dragged = true;
 		millis = Date.now();
+		
+		
 
 		if (e.type == 'touchstart' || e.type == 'touchmove' || e.type == 'touchend' || e.type == 'touchcancel') {
 			var touch = e.touches[0] || e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
@@ -25456,7 +25553,11 @@ function dragElement(elmnt) {
 			pos1 = e.clientX;
 			pos2 = e.clientY;
 		}
-
+		
+		if (!zoomable){
+			return;
+		}
+		
 		var zoom = parseFloat((pos4 - pos2) * 2 / elmnt.offsetHeight);
 
 		if (zoom > 1) {
@@ -25465,9 +25566,8 @@ function dragElement(elmnt) {
 			zoom = -1.0;
 		}
 		input.value = zoom * (input.max - input.min) + input.min;
-		//if (input.value != pos0) {
 		updateCameraConstraints("zoom", input.value, false, false);
-		//}
+		
 	}
 	function closeDragElement(e) {
 		
@@ -25543,14 +25643,17 @@ function dragElement(elmnt) {
 				log("focusable");
 				focusable = true;
 			}
-				
+				 
 			if ('zoom' in capabilities) {
-				log("zoomable;");
-				zoomable = true;
-				input.min = capabilities.zoom.min;
-				input.max = capabilities.zoom.max;
-				input.step = capabilities.zoom.step;
-				input.value = settings.zoom;
+				if (capabilities.zoom.min !== capabilities.zoom.max){
+					log("zoomable;");
+					zoomable = true;
+					input.min = capabilities.zoom.min;
+					input.max = capabilities.zoom.max;
+					input.step = capabilities.zoom.step;
+					input.value = settings.zoom;
+				}
+				
 			}
 		}
 		
@@ -29101,6 +29204,11 @@ var updateCameraConstraintsNext = false;
 
 async function updateCameraConstraints(constraint, value = null, ctrl=false, UUID=false, save=true) {
 	
+	if ((constraint === "zoom") && (value === 0)){
+		log("can't zoom to zero");
+		return;
+	}
+	
 	log("updateCameraConstraintsBusy..?");
 	
 	if (updateCameraConstraintsBusy){
@@ -29146,6 +29254,7 @@ async function updateCameraConstraints(constraint, value = null, ctrl=false, UUI
 	
 	log("updateCameraConstraintsNext:");
 	log(updateCameraConstraintsNext);
+
 	try {
 		if (track0.getSettings){
 			var cameraSettings = {};
@@ -29541,7 +29650,7 @@ function setupWebcamSelection(miconly=false) {
 				
 
 			outputSelect.onchange = function() {
-				if ((iOS) || (iPad)) {
+				if (iOS || iPad) {
 					return;
 				}
 				if (Firefox && !session.mobile){
@@ -30292,7 +30401,7 @@ async function requestBasicPermissions(constraint = {video: true, audio: true}, 
 		if (!(session.cleanOutput)) {
 			if (window.isSecureContext) {
 				warnUser("An error has occured when trying to access the webcam or microphone. The reason is not known.");
-			} else if ((iOS) || (iPad)) {
+			} else if (iOS || iPad) {
 				warnUser("iOS version 13.4 and up is generally recommended; older than iOS 11 is not supported.");
 			} else {
 				warnUser("Error acessing camera or microphone.\n\nThe website may be loaded in an insecure context.\n\nPlease see: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia");
@@ -31946,7 +32055,9 @@ function getChatMessage(msg, label = false, director = false, overlay = false) {
 					showtime = 8000;
 				}
 				setTimeout(function(ele) {
-					ele.parentNode.removeChild(ele);
+					try {
+						ele.parentNode.removeChild(ele);
+					} catch(e){}
 				}, showtime, spanOverlay);
 			}
 		}
@@ -33063,8 +33174,12 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false) 
 						getById("recordLocalbutton").dataset.state = "0";
 						getById("recordLocalbutton").style.backgroundColor = "";
 						getById("recordLocalbutton").innerHTML = '<i class="toggleSize las la-exclamation" ></i>';
+						if (restart!==true){
+							warnUser("Media Recording Stopped due to an error: "+restart);
+						} else {
+							warnUser("Media Recording Stopped due to an error.");
+						}
 						restart = false;
-						warnUser("Media Recording Stopped due to an error.");
 					} else {
 						getById("recordLocalbutton").innerHTML = '<i class="toggleSize las la-spinner" ></i>';
 						getById("recordLocalbutton").dataset.state = "2";
@@ -33315,7 +33430,11 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false) 
 
 	video.recorder.mediaRecorder.onerror = function(event) {
 		errorlog(event);
-		video.recorder.stop(true);
+		if (event && event.error && event.error.name){
+			video.recorder.stop(event.error.name);
+		} else {
+			video.recorder.stop(true);
+		}
 	};
 
 	video.srcObject.ended = function(event) {
@@ -38121,6 +38240,7 @@ async function createSecondStream2(UUID){
 		session.pcs[UUID+"_screen"].order = false;
 		session.pcs[UUID+"_screen"].preferVideoCodec = false;
 		session.pcs[UUID+"_screen"].startTime = Date.now();
+		session.pcs[UUID+"_screen"].needsPublishing = null;
 		// session.pcs[UUID+"_screen"].rotation = false; I don't think this will ever be used?
 		
 		// we will use allowVideo/allowAudio from the main UUID parent
