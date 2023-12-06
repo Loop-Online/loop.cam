@@ -5012,24 +5012,6 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 			}, session.waitImageTimeout);
 		}
 
-		log("auto request videos");
-		if ((iPad || iOS) && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1 && SafariVersion > 13) { // Modern iOS doesn't need pop up
-			play();
-		} else if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) { // Safari on Desktop does require pop up
-			if (!(session.cleanOutput)) {
-				warnUser("Safari requires us to ask for an audio permission to use peer-to-peer technology. You will need to accept it in a moment if asked to view this live video", 20000);
-			}
-			navigator.mediaDevices.getUserMedia({
-				audio: true
-			}).then(function() {
-				closeModal();
-				play();
-			}).catch(function() {
-				play();
-			});
-		} else { // everything else is OK.
-			play();
-		}
 	} else if (session.roomid) {
 		try {
 			if (session.label === false) {
