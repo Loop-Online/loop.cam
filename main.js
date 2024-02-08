@@ -892,7 +892,10 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 			document.documentElement.style.setProperty('--full-screen-button', 'none');
 			getById("fullscreenPage").classList.remove("hidden");
 		}
+	} else if (urlParams.has('nofullscreenbutton') || urlParams.has('nofsb')){ // just an alternative; might be compoundable
+		session.nofullwindowbutton = true;
 	}
+	
 	
 	if (urlParams.has('pip2') || urlParams.has('pipall')){ // just an alternative; might be compoundable
 		if (typeof documentPictureInPicture !== "undefined"){
@@ -1124,7 +1127,10 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 	}
 	
 	if (urlParams.has('layout')) {
-		session.accept_layouts = true;
+		
+		if (!urlParams.get('layout')){
+			session.accept_layouts = true;
+		}
 		try {
 			session.layout = JSON.parse(decodeURIComponent(urlParams.get('layout'))) || JSON.parse(urlParams.get('layout')) || {};
 		} catch(e){
@@ -1250,10 +1256,6 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 			getById("container-2").classList.add("skip-animation");
 			getById("container-2").classList.remove('pointer');
 		}
-	}
-
-	if (urlParams.has('manual')) {
-		session.manual = true;
 	}
 
 	if (urlParams.has('hands') || urlParams.has('hand')) {
@@ -2297,9 +2299,6 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 			session.nopreview = false;
 			session.minipreview = 3; //
 		}
-	} else if ((urlParams.has('preview')) || (urlParams.has('showpreview'))) {
-		log("preview ON");
-		session.nopreview = false;
 	} else if ((urlParams.has('minipreview')) || (urlParams.has('mini'))) {
 		
 		var mini = urlParams.get('minipreview') || urlParams.get('mini'); // 2 is a valid option. (3 is for iPhone with a hidden preview)
@@ -2311,13 +2310,24 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 		} else {
 			mini = 1;
 		}
-		
 		log("preview ON");
 		session.nopreview = false;
 		session.minipreview = mini;
+		if (session.manual===null){
+			session.manual = false;
+		}
 	} else if ((urlParams.has('largepreview'))) {
 		session.nopreview = false;
 		session.minipreview = false;
+		if (session.manual===null){
+			session.manual = false;
+		}
+	} else if ((urlParams.has('preview')) || (urlParams.has('showpreview'))) {
+		log("preview ON");
+		if (session.manual===null){
+			session.manual = false;
+		}
+		session.nopreview = false;
 	}
 	
 	if (urlParams.has('minipreviewoffset') || urlParams.has('mpo')){ // 40 would be centered
@@ -2433,6 +2443,10 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 	}
 	if (urlParams.has('pip3') || urlParams.has('mypip') || urlParams.has('pipme')){
 		session.pip3 = true;
+	}
+	
+	if (urlParams.has('manual')) {
+		session.manual = true;
 	}
 	
 	if (urlParams.has('keyframeinterval') || urlParams.has('keyframerate') || urlParams.has('keyframe') || urlParams.has('fki')) {
@@ -2822,8 +2836,6 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 	if (urlParams.has('androidfix')){
 		session.AndroidFix = true;
 	}
-	
-	
 	
 	if (urlParams.has('consent')){
 		session.consent = true;
@@ -3725,6 +3737,9 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 	if (urlParams.has('requireencryption')) {
 		session.requireencryption = true;
 	}
+	if (urlParams.has('unsafe')) {
+		session.unsafe = true;
+	}
 
 	if (urlParams.has('random') || urlParams.has('randomize')) {
 		session.randomize = true;
@@ -3853,8 +3868,12 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 		log("ICE FILTER ENABLED");
 		session.icefilter = urlParams.get('icefilter');
 	}
-	
-	
+	if (urlParams.has('lanonly')) {
+		session.localNetworkOnly = true;
+		session.configuration = {
+			sdpSemantics: session.sdpSemantics // future-proofing
+		};
+	}
 	
 	//if (!(ChromiumVersion>=57)){
 	//	getById("effectSelector").disabled=true;
@@ -3908,6 +3927,10 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 			//session.audioMeterGuest = true;
 			setInterval(function(){activeSpeaker(false);},100);
 		}
+	}
+	if (urlParams.has('activespeakerdelay') || urlParams.has('speakerviewdelay')  || urlParams.has('sasdelay')){
+		session.activeSpeakerTimeout = urlParams.get('activespeakerdelay') || urlParams.get('speakerviewdelay')  || urlParams.get('sasdelay') || 0;
+		session.activeSpeakerTimeout = parseInt(session.activeSpeakerTimeout);
 	}
 	
 	if (urlParams.has('noisegatesettings')){
@@ -4473,6 +4496,15 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 	
 	if ((session.permaid===false) && (session.roomid===false) && (session.view===false) && (session.effect===false) && (session.director===false)){
 		session.effect = null;
+	}
+	
+	if (session.mobile && (session.permaid===false) && !session.roomid){
+		getById("rememberStreamID").classList.remove("hidden");
+		
+		let rememberStreamIDmobile = getStorage("rememberStreamIDmobile");
+		if (rememberStreamIDmobile === "false"){
+			getById("rememberStreamIDcheck").checked = false;
+		}
 	}
 	
 	if (urlParams.has("hostwhep") || urlParams.has("whepout")){
@@ -5692,7 +5724,7 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 		}
 
 		if ("sendRequest" in e.data) { // webrtc send to publishers
-			session.sendRequest(e.data);
+			session.sendRequest(e.data.sendRequest);
 		}
 		
 		if ("sendRawMIDI" in e.data) { // webrtc send to publishers
@@ -6670,6 +6702,10 @@ async function main(){ // main asyncronous thread; mostly initializes the user s
 				event.preventDefault(); 
 				event.stopPropagation();
 				return;
+			} else if (event.key === 's'){
+				if (document.getElementById("gowebcam") && (document.getElementById("gowebcam").dataset.ready =="true")){
+					publishWebcam(document.getElementById("gowebcam"));
+				}
 			}
 		}
 	}
