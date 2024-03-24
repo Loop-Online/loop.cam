@@ -166,7 +166,10 @@ var miscTranslations = { // i can replace this list from time to time from the g
     "preview-meshcast-disabled": "You can't adjust the preview bitrate for Meshcast or WHIP-based streams",
 	"no-network": "Network connection lost 🤷‍♀️❌📶",
 	"no-network-details": "Network connection lost. 🤷‍♀️❌📶\n\nHave you lost your Internet connection?",
-	"enter-password-if-desired": "Enter a password if provided, otherwise just click Cancel"
+	"enter-password-if-desired": "Enter a password if provided, otherwise just click Cancel",
+	"your-screenshare": "Your screenshare",
+	"your-camera": "Your camera",
+	"accept-inbound-caller": "Accept the inbound telephone caller?"
 }
 
 function getTranslation(key){ // when using this, instead of miniTranslate, if the user changes the language, it might not update. Used mainly when you don't want any HTML (<span data-translate>) being including in the translation
@@ -219,8 +222,45 @@ urlEdited = urlEdited.replace(/\?/g, "&");
 urlEdited = urlEdited.replace(/\&/, "?");
 var urlParams = new URLSearchParams(urlEdited);
 
-if (urlParams.has("invite") || urlParams.has("i") || urlParams.has("code")){
+if (urlParams.has('invite') || urlParams.has('i') || urlParams.has('code')){
 	session.decodeInvite(urlParams.get("invite") || urlParams.get("i") || urlParams.get("code"));
+	
+} else if (urlParams.has('preset')){
+	let preset = urlParams.get('preset') || "1"; // default to preset 1 if none provided
+	let xhttp = new XMLHttpRequest();
+	xhttp.open("GET", "presets.json", false); // blocking
+	xhttp.setRequestHeader('Content-Type', 'application/json'); // expecting json response
+
+	try {
+		xhttp.send();
+		if (xhttp.status === 200) {
+			const response = JSON.parse(xhttp.responseText);
+			let presetString = "";
+			
+			if (Array.isArray(response)) {
+				let index = (parseInt(preset) || 1) - 1;
+				presetString = response[index];
+			} else if (typeof response === "object" && response !== null) {
+				presetString = response[preset];
+			}
+			if (!presetString.startsWith("?") || presetString.startsWith("&")){
+				presetString = "?"+presetString;
+			}
+			
+			let newURL = presetString + "&" + urlParams.toString();
+			newURL = newURL.replace(/\?/g, "&");
+			newURL = newURL.replace(/\&/, "?");
+			urlParams = new URLSearchParams(newURL);
+			
+			if (urlParams.has("invite") || urlParams.has("i") || urlParams.has("code")){
+				session.decodeInvite(urlParams.get("invite") || urlParams.get("i") || urlParams.get("code"));
+			}
+		} else {
+			errorlog(xhttp.statusTex);
+		}
+	} catch (error) {
+		errorlog(error);
+	}
 }
 
 if (session.decrypted){
@@ -229,11 +269,9 @@ if (session.decrypted){
 	session.decrypted = session.decrypted.replace(/\&/, "?");
 	urlParams = new URLSearchParams(session.decrypted);
 	//session.decrypted = true;
-} else {
-	if (urlEdited !== window.location.search){
-		warnlog(window.location.search + " changed to " + urlEdited);
-		window.history.pushState({path: urlEdited.toString()}, '', urlEdited.toString());
-	}
+} else if (urlEdited !== window.location.search){
+	warnlog(window.location.search + " changed to " + urlEdited);
+	window.history.pushState({path: urlEdited.toString()}, '', urlEdited.toString());
 }
 delete urlEdited;
 
@@ -777,7 +815,7 @@ function promptUser(eleId, UUID=null){
 		getById("modalBackdrop").remove();
 	}
 	
-	zindex = 30 + document.querySelectorAll('#promptModal').length;
+	zindex = document.querySelectorAll('#promptModal').length + document.querySelectorAll('.alertModal').length;
 	modalTemplate =
 	`<div id="promptModal" style="z-index:${zindex + 2}">	
 		<div class="promptModalInner">
@@ -821,7 +859,7 @@ async function promptAlt(inputText, block=false, asterix=false, value=false, tim
 		Prompts[promptID].resolve = resolve;
 		Prompts[promptID].reject = reject;
 		
-		var zindex = 1030 + document.querySelectorAll('.promptModal').length;
+		var zindex = 32 + document.querySelectorAll('.promptModal').length + document.querySelectorAll('.alertModal').length; 
 		
 		if (block){
 			var backdropClass = "opaqueBackdrop";
@@ -1234,22 +1272,26 @@ function youveBeenTransferred(){
 }
 
 function youveBeenActivated(){
-	if (session.queueType==3){ // session.queue is now set to false
-		getById("overlayMsgs").innerText = "";
+	if (session.queueType==3){ // session.queue is now set to false; hold without video
+		//getById("overlayMsgs").innerText = "";
+		closeModal(false, "123")
 		for (var UUID in session.pcs){
 			if (session.pcs[UUID].needsPublishing){
 				session.initialPublish(UUID); // let's starts publishing now
 			}
 		}
-	} else if (session.queueType==4){
-		getById("overlayMsgs").innerText = "";
+	} else if (session.queueType==4){ // hold with video
+		//getById("overlayMsgs").innerText = "";
+		closeModal(false, "123")
 	}
+	
 	getChatMessage( getTranslation("you-have-been-activated"), label = false, director = false, overlay = true);
 	hideHomeCheck();
 }
 
 function youreWaitingToBeActivated(){
-	getChatMessage( getTranslation("you-not-yet-activated"), label = false, director = false, overlay = true);
+	// getChatMessage( getTranslation("you-not-yet-activated"), label = false, director = false, overlay = true);
+	warnUser( getTranslation("you-not-yet-activated"), false, false, 123);
 	hideHomeCheck();
 }
 
@@ -1264,7 +1306,7 @@ async function confirmAlt(inputText, block=false){
 		Prompts[promptID].resolve = resolve;
 		Prompts[promptID].reject = reject;
 	
-		var zindex = 30 + document.querySelectorAll('.promptModal').length;
+		var zindex = 33 + document.querySelectorAll('.promptModal').length + document.querySelectorAll('.alertModal').length; 
 		
 		if (block){
 			var backdropClass = "opaqueBackdrop";
@@ -1294,22 +1336,22 @@ async function confirmAlt(inputText, block=false){
 		document.getElementById("submit_"+promptID).addEventListener("click", function(event){
 			var pid = event.target.dataset.pid;
 			result = true;
-			document.getElementById("modalBackdrop_"+pid).remove();
-			document.getElementById("modal_"+pid).remove();
+			getById("modalBackdrop_"+pid).remove();
+			getById("modal_"+pid).remove();
 			Prompts[pid].resolve();
 		});
 
 		document.getElementById("cancel_"+promptID).addEventListener("click", function(event){
 			var pid = event.target.dataset.pid;
-			document.getElementById("modalBackdrop_"+pid).remove();
-			document.getElementById("modal_"+pid).remove();
+			getById("modalBackdrop_"+pid).remove();
+			getById("modal_"+pid).remove();
 			Prompts[pid].resolve();
 		});
 
 		document.getElementById("close_"+promptID).addEventListener("click", function(event){
 			var pid = event.target.dataset.pid;
-			document.getElementById("modalBackdrop_"+pid).remove();
-			document.getElementById("modal_"+pid).remove();
+			getById("modalBackdrop_"+pid).remove();
+			getById("modal_"+pid).remove();
 			Prompts[pid].resolve();
 		});
 
@@ -1324,7 +1366,7 @@ async function confirmAlt(inputText, block=false){
 }
 
 var modalTimeout=null;
-function warnUser(message, timeout=false, sanitize=true){
+function warnUser(message, timeout=false, sanitize=true, modalID=false){
 	// Allows for multiple alerts to stack better.
 	// Every modal and backdrop has an increasing z-index
 	// to block the previous modal
@@ -1337,7 +1379,7 @@ function warnUser(message, timeout=false, sanitize=true){
 		getById("modalBackdrop").remove();
 	}
 	
-	zindex = 31 + document.querySelectorAll('.alertModal').length;
+	zindex = 31 + document.querySelectorAll('.alertModal').length + document.querySelectorAll('.promptModal').length; 
 	try{
 		if (sanitize){
 			message = sanitizeChat(message,2000);
@@ -1346,8 +1388,13 @@ function warnUser(message, timeout=false, sanitize=true){
 	} catch(e){
 		errorlog(message);
 	}
+	
+	if (!modalID){
+		modalID = Math.floor(Math.random() * 999)+ 1000;
+	}
+	
 	modalTemplate =
-	`<div class="alertModal" id="alertModal"  style="z-index:${zindex + 2}">	
+	`<div class="alertModal" id="alertModal" data-modalID=${modalID} style="z-index:${zindex + 2}">	
 		<div class="alertModalInner">
 			<span class='modalClose' onclick="closeModal()">×</span>
 			<span id="alertModalMessage" class='alertModalMessage'>${message}</span>
@@ -1360,15 +1407,22 @@ function warnUser(message, timeout=false, sanitize=true){
 	
 	clearTimeout(modalTimeout);
 	if (timeout){
-		modalTimeout = setTimeout(closeModal, timeout);
+		modalTimeout = setTimeout(closeModal, timeout, false, modalID);
 	}
 	getById("alertModal").addEventListener("click", function(e) {
 		e.stopPropagation();
 		return false;
 	});
-	
+	return modalID;
 }
-function closeModal(ele=false){
+function closeModal(ele=false, modalID=false){
+	
+	if (modalID && !ele){
+		if (!document.querySelector("#alertModal[data-modalID='"+modalID+"']")){
+			return;
+		}
+	}
+	
 	clearTimeout(modalTimeout);
 	try {
 		getById("modalBackdrop").innerHTML = ''; // Delete modal
@@ -4151,8 +4205,7 @@ function updateMixer(e=false){
 }
 
 function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a giant function that runs when there are changes to screensize, video track statuses, etc.
-	try { 
-	
+	try {
 		
 		if (session.switchMode){}
 		else if (session.director){return;}
@@ -4236,7 +4289,6 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				}
 			}
 		}
-
 	
 		if (session.locked){
 			var w123 = w;
@@ -5131,6 +5183,32 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 			} 
 			posCount+=1;
 		}
+	} else if (session.rows && mediaPool.length){
+		try {
+			customLayout = {};
+			let n = mediaPool.length;
+			let rows = 1;
+			if (session.rows.length>=n){
+				rows = parseInt(session.rows[n-1]) || 1;
+			} else {
+				rows = parseInt(session.rows[session.rows.length-1]) || 1;
+			}
+			let cols = Math.ceil(n/rows) || 1;
+			
+			for (var i = 0; i<n; i++){
+				let col = i%cols;
+				let row = parseInt(i/cols)%rows;
+				//console.log(row,col, rows,cols,i,n)
+				if ((cols>=2) && (rows>=2) && ((n<(row+1)*cols))) {
+					let delta = (row+1)*cols - n;
+					customLayout[mediaPool[i].dataset.sid] = {"y":(100/rows)*row, "h":(100/rows), "x":(100/cols)*(col+delta),"w":(100/cols), "c":session.cover};
+				} else {
+					customLayout[mediaPool[i].dataset.sid] = {"y":(100/rows)*row, "h":(100/rows), "x":(100/cols)* col,     "w":(100/cols), "c":session.cover};
+				}
+			}
+		} catch(e){
+			errorlog(e);
+		}
 	}
 	
 	try {
@@ -5533,6 +5611,7 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 			var borderColor = session.borderColor || "#000";
 			var fadein = session.fadein || false;
 			var backgroundMedia = session.defaultMedia || false;
+			var foregroundMedia = session.defaultOverlayMedia || false;
 			var animated = session.animatedMoves || 0;
 			if (!borderOffset){
 				borderColor = "#0000";
@@ -5572,6 +5651,9 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				}
 				if ("backgroundMedia" in layout[vid.dataset.sid]){
 					backgroundMedia = layout[vid.dataset.sid].backgroundMedia || false;
+				}
+				if ("foregroundMedia" in layout[vid.dataset.sid]){
+					foregroundMedia = layout[vid.dataset.sid].foregroundMedia || false;
 				}
 				if (vid.container){
 					if (!((vid.nodeName == "IFRAME") && vid.isConnected)){ // moving an iframe will break it.
@@ -5740,6 +5822,22 @@ function updateMixerRun(e=false){  // this is the main auto-mixing code.  It's a
 				container.style.backgroundRepeat = "no-repeat";
 			} else if (container.style.backgroundImage){
 				container.style.backgroundImage = "unset";
+			}
+			
+			if (foregroundMedia){
+				if (!container.foregroundMedia){
+					container.foregroundMedia = document.createElement("img");
+					container.foregroundMedia.className = "foregroundMedia";
+					container.appendChild(container.foregroundMedia);
+				}
+				container.foregroundMedia.src = foregroundMedia;
+			} else if (container.foregroundMedia){
+				try {
+					container.foregroundMedia.remove();
+					delete container.foregroundMedia;
+				} catch(e){
+					errorlog(e);
+				}
 			}
 			
 			
@@ -6720,7 +6818,7 @@ function requestKeyframeScene(ele) {
 	}
 }
 
-function pokeIframeAPI(action, value = null, UUID = null, SID=null) {
+function pokeIframeAPI(action, value = null, UUID = null, SID=null, CID=null) {
 	if (!isIFrame){return;}
 	try {
 		var data = {};
@@ -6750,6 +6848,10 @@ function pokeIframeAPI(action, value = null, UUID = null, SID=null) {
 		
 		if (SID){
 			data.streamID = SID;
+		}
+		
+		if (CID){
+			data.cib = CID;
 		}
 		
 		if (isIFrame) {
@@ -7585,53 +7687,39 @@ function drawOnScreen(){
 //////////  Canvas Effects  ///////////////
 
 
-function audioTimerLoop(callback, fps=40) {
 
-  fps += 5;
-  var aCtx = new AudioContext();
-  // Chrome needs our oscillator node to be attached to the destination
-  // So we create a silent Gain Node
-  var silence = aCtx.createGain();
-  silence.gain.value = 0;
-  silence.connect(aCtx.destination);
 
-  onOSCend();
-
-  var stopped = false;
-  function onOSCend() {
-    osc = aCtx.createOscillator();
-    osc.onended = onOSCend;
-    osc.connect(silence);
-    osc.start(0);
-    osc.stop(aCtx.currentTime + 1/fps);
-    callback(aCtx.currentTime);
-    if (stopped) {
-      osc.onended = null;
-    }
-  };
-  // return a function to stop our loop
-  return function() {
-    stopped = true;
-  };
-}
-
-function drawFrameMirrored(mirror=true, flip=false) {
-	session.canvasCtx.save();
-	if (flip){
-		if (mirror){
-			session.canvasCtx.scale(-1, -1);
-			session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width * -1, session.canvas.height* -1);
-		} else {
-			session.canvasCtx.scale(1, -1);
-			session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width, session.canvas.height* -1);
-		}
-	} else if (mirror){
-		session.canvasCtx.scale(-1, 1);
-		session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width * -1, session.canvas.height);
-	} else {
-		session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width, session.canvas.height);
+var drawFrameMirroredActive = false;
+function drawFrameMirrored(mirror = true, flip = false) {
+    if (drawFrameMirroredActive) return;
+    drawFrameMirroredActive = true;
+	
+	if (session.effect=="2"){
+		mirror = true;
+		flip = false;
+	} else if (session.effect=="-2"){
+		mirror = true;
+		flip = true;
+	} else if (session.effect=="-1"){
+		mirror = false;
+		flip = true;
 	}
-	session.canvasCtx.restore();
+
+    try {
+        session.canvasCtx.save();
+        if (flip) {
+            session.canvasCtx.scale(mirror ? -1 : 1, -1);
+            session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width * (mirror ? -1 : 1), session.canvas.height * -1);
+        } else {
+            session.canvasCtx.scale(mirror ? -1 : 1, 1);
+            session.canvasCtx.drawImage(session.canvasSource, 0, 0, session.canvas.width * (mirror ? -1 : 1), session.canvas.height);
+        }
+        session.canvasCtx.restore();
+    } catch (e) {
+        errorlog(e);
+    }
+
+    drawFrameMirroredActive = false;
 }
 
 function motionDetection(video, threshold = 15, sensitivity=75){ 
@@ -7695,15 +7783,101 @@ function motionDetection(video, threshold = 15, sensitivity=75){
 				session.motionRecordTimeout = setTimeout(function(){
 					session.motionRecordTimeout = null;
 				},1000);
-				saveVideoFrameToClipboard(video);
+				saveVideoFrameToDisk(video);
 				
 			}
 		}
 	}
 }
 
+let currentOscillatorId = 0;
+function clearOscillator() {
+	const thisOscillatorId = ++currentOscillatorId; 
+    if (session.canvasOscillator) {
+        session.canvasOscillator.stop();
+        session.canvasOscillator.disconnect();
+        session.canvasOscillator = null;
+    }
+
+    if (session.canvasSilence) {
+        session.canvasSilence.disconnect();
+        session.canvasSilence = null;
+    }
+	if (session.stats){
+		delete session.stats.canvas_draw_rate;
+	}
+}
+function setupOscillator(callbackFunction, frameRate = 30, timeOne = null, thisOscillatorId=null) {
+	if (!thisOscillatorId){
+		thisOscillatorId = ++currentOscillatorId;
+	} else if (currentOscillatorId !== thisOscillatorId) {
+		// no longer valid
+		return;
+	}
+
+    if (session.canvasOscillator) {
+        session.canvasOscillator.stop();
+        session.canvasOscillator.disconnect();
+        session.canvasOscillator = null;
+    }
+
+    if (session.canvasSilence) {
+        session.canvasSilence.disconnect();
+        session.canvasSilence = null;
+    }
+
+    if (!session.audioCtx) {
+        session.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    let oscillator = session.audioCtx.createOscillator();
+    session.canvasOscillator = oscillator;
+    let silence = session.audioCtx.createGain();
+    session.canvasSilence = silence;
+
+    silence.gain.value = 0;
+    oscillator.connect(silence);
+    silence.connect(session.audioCtx.destination);
+
+    if (!timeOne) {
+        timeOne = session.audioCtx.currentTime;
+    }
+
+    oscillator.onended = () => {
+        oscillator.disconnect();
+        silence.disconnect();
+        if (currentOscillatorId === thisOscillatorId) {
+
+            let timeTwo = session.audioCtx.currentTime;
+
+            if (typeof callbackFunction === "function") {
+                callbackFunction();
+            }
+
+            if (session.stats) {
+                let actualRate = 1 / (timeTwo - timeOne); // Calculate the actual FPS
+                session.stats.canvas_draw_rate = parseInt(actualRate * 10) / 10;
+            }
+            setupOscillator(callbackFunction, frameRate, timeTwo, thisOscillatorId);
+        }
+    };
+
+    oscillator.start(timeOne);
+    oscillator.stop(timeOne + (1 / frameRate));
+	
+	return function(){
+		if (currentOscillatorId === thisOscillatorId) {
+			clearOscillator(); // clear only if needs to be cleared
+		}
+	}
+}
+
 function setupCanvas() {
+	
+	clearOscillator();
+	
 	log("SETUP CANVAS");
+	
 	if (session.canvas === null) {
 		session.canvas = document.createElement("canvas");
 		session.canvas.width = 512;
@@ -7715,7 +7889,7 @@ function setupCanvas() {
 			session.canvasCtx = session.canvas.getContext('2d');
 		}
 		
-		session.canvasCtx.fillStyle = "blue";
+		session.canvasCtx.fillStyle = "black";
 		session.canvasCtx.fillRect(0, 0, 512, 288);
 		session.canvasSource = createVideoElement();
 		session.canvasSource.autoplay = true;
@@ -7770,7 +7944,7 @@ function applyEffects(track) { // video only please. do not touch audio.  Run up
 		session.canvas.height = 2 * parseInt(session.canvasSource.height / 2);
 		session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
 		
-		digitalZoom();
+		digitalZoom(true);
 	} else if (session.effect == "8") { // manual zoom
 		setupCanvas();
 		session.canvasSource.srcObject.addTrack(track);
@@ -7781,7 +7955,7 @@ function applyEffects(track) { // video only please. do not touch audio.  Run up
 		session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
 		
 		simpleDraw();	
-	} else if (session.effect == "2") {  // mirror video at a canvas level
+	} else if (["-2", "-1", "2"].includes(session.effect)) {  // mirror video at a canvas level
 		setupCanvas();
 		session.canvasSource.srcObject.addTrack(track);
 		
@@ -7790,45 +7964,8 @@ function applyEffects(track) { // video only please. do not touch audio.  Run up
 		session.canvas.height = 2 * parseInt(session.canvasSource.height / 2);
 		session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
 		
-		var drawRate = parseInt(1000 / track.getSettings().frameRate) + 1;
-		if (session.canvasInterval !== null) {
-			clearInterval(session.canvasInterval);
-		}
-		session.canvasInterval = setInterval(function() {
-			drawFrameMirrored(true, false);
-		}, drawRate);
-	} else if (session.effect == "-1") {  // mirror and flip video at a canvas level
-		setupCanvas();
-		session.canvasSource.srcObject.addTrack(track);
-		
-		session.canvasSource.width = track.getSettings().width || 1280;
-		session.canvasSource.height = track.getSettings().height || 720;
-		session.canvas.height = 2 * parseInt(session.canvasSource.height / 2);
-		session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
-		
-		var drawRate = parseInt(1000 / track.getSettings().frameRate) + 1;
-		if (session.canvasInterval !== null) {
-			clearInterval(session.canvasInterval);
-		}
-		session.canvasInterval = setInterval(function() {
-			drawFrameMirrored(false, true);
-		}, drawRate);
-	} else if (session.effect == "-2") {  // mirror and flip video at a canvas level
-		setupCanvas();
-		session.canvasSource.srcObject.addTrack(track);
-		
-		session.canvasSource.width = track.getSettings().width || 1280;
-		session.canvasSource.height = track.getSettings().height || 720;
-		session.canvas.height = 2 * parseInt(session.canvasSource.height / 2);
-		session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
-		
-		var drawRate = parseInt(1000 / track.getSettings().frameRate) + 1;
-		if (session.canvasInterval !== null) {
-			clearInterval(session.canvasInterval);
-		}
-		session.canvasInterval = setInterval(function() {
-			drawFrameMirrored(true, true);
-		}, drawRate);
+		setupOscillator(drawFrameMirrored, track.getSettings().frameRate || 30);
+
 	} else if ((session.effect == "3") || (session.effect == "4") || (session.effect == "5")){   // blur & greenscreen (low and high)
 		setupCanvas();
 		session.canvasSource.srcObject.addTrack(track);
@@ -7968,13 +8105,14 @@ async function makeImages(startup=false){
 			osc.connect(session.webPcanvas.silence);
 			session.webPcanvas.makeImagesTimeout = osc;
 			osc.start(0);
-			osc.onended = makeImages;
+			osc.onended = function(){
+				this.disconnect();
+				makeImages();
+			};
 			osc.stop(session.webPcanvas.aCtx.currentTime+0.5);
 		}
 		return;
 	}
-	
-	
 	
 	if (makeImagesActive===null){
 		makeImagesActive=true;
@@ -8132,7 +8270,10 @@ async function makeImages(startup=false){
 			osc.connect(session.webPcanvas.silence);
 			session.webPcanvas.makeImagesTimeout = osc;
 			osc.start(0);
-			osc.onended = makeImages;
+			osc.onended = function(){
+				this.disconnect();
+				makeImages();
+			};
 			osc.stop(session.webPcanvas.aCtx.currentTime);
 			
 			//session.webPcanvas.makeImagesTimeout = setTimeout(function(){makeImages();},0); 
@@ -8142,7 +8283,10 @@ async function makeImages(startup=false){
 			osc.connect(session.webPcanvas.silence);
 			session.webPcanvas.makeImagesTimeout = osc;
 			osc.start(0);
-			osc.onended = makeImages;
+			osc.onended = function(){
+				this.disconnect();
+				makeImages();
+			};
 			osc.stop(session.webPcanvas.aCtx.currentTime+time/1000);
 			
 			//session.webPcanvas.makeImagesTimeout = setTimeout(function(){makeImages();},time);
@@ -8155,7 +8299,10 @@ async function makeImages(startup=false){
 				osc.connect(session.webPcanvas.silence);
 				session.webPcanvas.makeImagesTimeout = osc;
 				osc.start(0);
-				osc.onended = makeImages;
+				osc.onended = function(){
+					this.disconnect();
+					makeImages();
+				};
 				osc.stop(session.webPcanvas.aCtx.currentTime+time/1000);
 				//session.webPcanvas.makeImagesTimeout = setTimeout(function(){makeImages();},0);
 				return;
@@ -8331,16 +8478,19 @@ function resetCanvas(){
 		session.canvasSource.height = track.getSettings().height || 720;
 	});
 }
-
+ 
 var LaunchTFWorkerCallback = false;
-function TFLiteWorker(){
-	if (session.tfliteModule==false){
-		LaunchTFWorkerCallback=true
-		return;
-	}
-	if (TFLITELOADING){LaunchTFWorkerCallback=true;return;}
-	LaunchTFWorkerCallback=false;
-	log("TFLiteWorker() called");
+function TFLiteWorker() {
+    if (session.tfliteModule == false) {
+        LaunchTFWorkerCallback = true;
+        return;
+    }
+    if (TFLITELOADING) {
+        LaunchTFWorkerCallback = true;
+        return;
+    }
+    LaunchTFWorkerCallback = false;
+    log("TFLiteWorker() called");
 	
 	if (!session.tfliteModule.img){
 		if (!session.selectImageTFLITE_contents){
@@ -8365,7 +8515,7 @@ function TFLiteWorker(){
 		}
 	}
 	
-	if (session.tfliteModule.looping){return;}
+	//if (session.tfliteModule.looping){return;}
 	
 	const segmentationWidth = 256;
 	const segmentationHeight = 144;
@@ -8381,17 +8531,13 @@ function TFLiteWorker(){
 	session.tfliteModule.offsetTime = 0;
 	
 	
-	var aCtx = new AudioContext();
-	var silence = aCtx.createGain();
-	silence.gain.value = 0;
-	silence.connect(aCtx.destination);
-	
 	var slow = 0;
 	var slower = false;
 	
-	async function process(timerunning=false){
+	async function process(){
 		if (!(session.effect=="3" || session.effect=="4" || session.effect=="5")){
-			session.tfliteModule.looping=false;
+			//session.tfliteModule.looping=false;
+			errorlog("shouldn't happen");
 			return;
 		}
 		
@@ -8402,13 +8548,12 @@ function TFLiteWorker(){
 			if (screenWidth !== window.innerWidth){
 				screenWidth = window.innerWidth;
 				
-				session.tfliteModule.looping=false;
+				//session.tfliteModule.looping=false;
 				session.tfliteModule.activelyProcessing=false;
 				
 				setTimeout(function(){
 					updateRenderOutpipe();
 				},200);
-				
 				return;
 			}
 		}
@@ -8499,7 +8644,7 @@ function TFLiteWorker(){
 				session.canvasCtx.filter = 'none';
 			} else {
 				session.tfliteModule.activelyProcessing=false;
-				session.tfliteModule.looping=false;
+				//session.tfliteModule.looping=false;
 				return;
 			}
 			
@@ -8508,7 +8653,7 @@ function TFLiteWorker(){
 		} catch (e){
 			errorlog(e);
 			session.tfliteModule.activelyProcessing=false;
-			session.tfliteModule.looping=false;
+			//session.tfliteModule.looping=false;
 			return;
 		}
 		session.tfliteModule.lastTime = session.tfliteModule.nowTime;
@@ -8528,26 +8673,17 @@ function TFLiteWorker(){
 				}
 			}
 			session.tfliteModule.offsetTime =  0;
-			var osc = aCtx.createOscillator();
-			osc.connect(silence);
-			osc.start(0);
-			osc.onended = process;
-			osc.stop(aCtx.currentTime);
 		} else {
 			slow-=2;
 			session.tfliteModule.offsetTime = time || 0;
-			var osc = aCtx.createOscillator();
-			osc.connect(silence);
-			osc.start(0);
-			osc.onended = process;
-			osc.stop(aCtx.currentTime + time/1000);
 		}
 	}
 	
-	async function processiOS(timerunning=false){
+	async function processiOS(){
 		
 		if (!(session.effect=="3" || session.effect=="4" || session.effect=="5")){
-			session.tfliteModule.looping=false;
+			errorlog("shouldn't happen");
+			//session.tfliteModule.looping=false;
 			return;
 		}
 		if (session.tfliteModule.activelyProcessing){return;}
@@ -8558,7 +8694,7 @@ function TFLiteWorker(){
 			setTimeout(function(){
 				updateRenderOutpipe();
 			},200);
-			session.tfliteModule.looping=false;
+			//session.tfliteModule.looping=false;
 			session.tfliteModule.activelyProcessing=false;
 			return;
 		}
@@ -8732,12 +8868,12 @@ function TFLiteWorker(){
 				session.canvasCtx.drawImage(canvasBG, 0, 0, width, height, 0, 0, session.canvas.width, session.canvas.height);
 			} else {
 				session.tfliteModule.activelyProcessing=false;
-				session.tfliteModule.looping=false;
+				//session.tfliteModule.looping=false;
 				return;
 			}
 		} catch (e){
 				session.tfliteModule.activelyProcessing=false;
-				session.tfliteModule.looping=false;
+				//session.tfliteModule.looping=false;
 				errorlog(e);
 				return;
 		}
@@ -8747,10 +8883,8 @@ function TFLiteWorker(){
 		
 		var time  = 30 - ((session.tfliteModule.nowTime - session.tfliteModule.lastTime) || 0);
 		time = time + (session.tfliteModule.offsetTime || 0);
-		session.tfliteModule.activelyProcessing=false;
 		
 		slow-=1;
-		
 		if (time <= 0 ){
 			if (time<-40){
 				slow+=1;
@@ -8759,22 +8893,16 @@ function TFLiteWorker(){
 				}
 			}
 			session.tfliteModule.offsetTime =  0;
-			var osc = aCtx.createOscillator();
-			osc.connect(silence);
-			osc.start(0);
-			osc.onended = processiOS;
-			osc.stop(aCtx.currentTime);
+			
 		} else {
 			slow-=2;
 			session.tfliteModule.offsetTime = time || 0;
-			var osc = aCtx.createOscillator();
-			osc.connect(silence);
-			osc.start(0);
-			osc.onended = processiOS;
-			osc.stop(aCtx.currentTime + time/1000);
+			
 		}
+		session.tfliteModule.activelyProcessing=false;
 	}
-	session.tfliteModule.looping=true;
+	//session.tfliteModule.looping=true;
+	
 	
 	var screenWidth = window.innerWidth;
 	
@@ -8792,11 +8920,19 @@ function TFLiteWorker(){
 		canvasBG.height = parseInt(session.canvas.height/12);;
 		ctxBG.width = canvasBG.width;
 		ctxBG.height = canvasBG.height;
-		
-		osc.onended = processiOS;
-		processiOS(true);
+		try {
+			session.tfliteModule.stopOscillator = setupOscillator(processiOS, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+		} catch(e){
+			errorlog(e);
+			session.tfliteModule.stopOscillator = setupOscillator(processiOS, 30);
+		}
 	} else {
-		process(true);
+		try {
+			session.tfliteModule.stopOscillator = setupOscillator(process, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+		} catch(e){
+			errorlog(e);
+			session.tfliteModule.stopOscillator = setupOscillator(process, 30);
+		}
 	}
 }
 
@@ -8968,9 +9104,9 @@ function mainMeshMask() {
 	  
 	    if (!session.TFJSModel.timeoutDraw){
 			try {
-				session.TFJSModel.timeoutDraw = audioTimerLoop(process, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+				session.TFJSModel.timeoutDraw = setupOscillator(process, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
 			} catch(e){
-				session.TFJSModel.timeoutDraw = audioTimerLoop(process, 30); // setTimeout(function(){draw();},33);
+				session.TFJSModel.timeoutDraw = setupOscillator(process, 30); // setTimeout(function(){draw();},33);
 			}
 		}
 		session.TFJSModel.activelyProcessing = false;
@@ -9118,9 +9254,9 @@ function drawFace() {
 
 			if (!timers.timeoutDraw){
 				try {
-					timers.timeoutDraw = audioTimerLoop(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+					timers.timeoutDraw = setupOscillator(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
 				} catch(e){
-					timers.timeoutDraw = audioTimerLoop(draw,40); // setTimeout(function(){draw();},33);
+					timers.timeoutDraw = setupOscillator(draw,40); // setTimeout(function(){draw();},33);
 				}
 			}
 			timers.activelyProcessingDraw = false;
@@ -9246,9 +9382,9 @@ function simpleDraw(reinit=false) {
 
 				if (!timers.timeoutDraw){
 					try {
-						timers.timeoutDraw = audioTimerLoop(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+						timers.timeoutDraw = setupOscillator(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
 					} catch(e){
-						timers.timeoutDraw = audioTimerLoop(draw,40); // setTimeout(function(){draw();},33);
+						timers.timeoutDraw = setupOscillator(draw,40); // setTimeout(function(){draw();},33);
 					}
 				}
 				timers.activelyProcessingDraw = false;
@@ -9279,20 +9415,17 @@ function simpleDraw(reinit=false) {
 //////
 
 var digitalZoomMain=false;
-function digitalZoom(reinit=false) {
+function digitalZoom(resetZoom=false) {
 	if (session.effect !== "7"){return;}
 	if (digitalZoomMain){
-		digitalZoomMain(reinit); 
+		digitalZoomMain(resetZoom); 
 		return;
 	} else if (digitalZoomMain===null){
 		return;
 	}
 	digitalZoomMain = null;
 	
-	var timers = {};
-	timers.activelyProcessingDraw = false;
-
-	var ctx = session.canvasCtx;
+	var activelyProcessingDraw = false;
 	
 	function fde1(){
 		try{
@@ -9305,24 +9438,19 @@ function digitalZoom(reinit=false) {
 			var ya = null;
 			var zz = 1;
 			
-			
-			function draw() {
-				if (timers.activelyProcessingDraw){return;}
-				timers.activelyProcessingDraw = true;
+			function draw(){
+				if (activelyProcessingDraw){return;}
+				activelyProcessingDraw = true;
 				if (session.effect !== "7"){
 					zz = 1.0;
 					xa = 0;
 					ya = 0;
-					timers.activelyProcessingDraw = false; 
-					if (timers.timeoutDraw){
-						timers.timeoutDraw();
-						timers.timeoutDraw = null;
-					}
+					activelyProcessingDraw = false;
 					return;
 				}
 				try {
 					if (!session.canvasSource || !session.canvasSource.width){
-						timers.activelyProcessingDraw = false;
+						activelyProcessingDraw = false;
 						return
 					}
 					if (xa === null && session.canvasSource.width){
@@ -9334,7 +9462,6 @@ function digitalZoom(reinit=false) {
 					session.canvas.width = 2 * parseInt(session.canvasSource.width / 2);
 					
 
-					
 					if (session.effectValue){
 						zz = 0.9*zz + session.effectValue *0.1;
 						
@@ -9344,43 +9471,50 @@ function digitalZoom(reinit=false) {
 					}
 					//console.log(parseInt(zz), parseInt(xa), parseInt(ya), parseInt(session.canvasSource.width-xa*2), parseInt(session.canvasSource.height-ya*2));
 					
-					ctx.drawImage(session.canvasSource, xa, ya, session.canvasSource.width-xa*2, session.canvasSource.height-ya*2, 0,0,session.canvasSource.width, session.canvasSource.height);
+					session.canvasCtx.drawImage(session.canvasSource, xa, ya, session.canvasSource.width-xa*2, session.canvasSource.height-ya*2, 0,0,session.canvasSource.width, session.canvasSource.height);
 					//ctx.beginPath();
 					//ctx.rect(lastFace.x, lastFace.y, lastFace.w, lastFace.h);
 				//	ctx.stroke();
-				} catch(e){errorlog(e);}
-
-				if (!timers.timeoutDraw){
-					try {
-						timers.timeoutDraw = audioTimerLoop(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
-					} catch(e){
-						timers.timeoutDraw = audioTimerLoop(draw,40); // setTimeout(function(){draw();},33);
-					}
+				} catch(e){
+					errorlog(e);
 				}
-				timers.activelyProcessingDraw = false;
+				
+				activelyProcessingDraw = false;
+				
 			}
 		} catch(e){
 			errorlog(e);
-			timers.activelyProcessingDraw = false;
+			activelyProcessingDraw = false;
 		}
 			
-		function fde2(reinit=false){
-			if (reinit){
-				if (session.canvasSource && session.canvasSource.srcObject && session.canvasSource.srcObject.getVideoTracks().length){
-					session.canvasSource.width = session.canvasSource.srcObject.getVideoTracks()[0].getSettings().width || 1280;
-					session.canvasSource.height = session.canvasSource.srcObject.getVideoTracks()[0].getSettings().height || 720;
-				}
+		function fde2(resetZoom=false){
+			
+			if (session.canvasSource && session.canvasSource.srcObject && session.canvasSource.srcObject.getVideoTracks().length){
+				session.canvasSource.width = session.canvasSource.srcObject.getVideoTracks()[0].getSettings().width || 1280;
+				session.canvasSource.height = session.canvasSource.srcObject.getVideoTracks()[0].getSettings().height || 720;
+			}
+			
+			if (resetZoom){
 				xa = null;
+				ya = null;
+				zz = 1;
 			}
-			if (!timers.activelyProcessingDraw){
-				draw();
+			
+			try {
+				setupOscillator(draw, session.canvasSource.srcObject.getVideoTracks()[0].getSettings().frameRate || 30);
+			} catch(e){
+				setupOscillator(draw,40); // setTimeout(function(){draw();},33);
 			}
+			
+			draw();
 		};
+		
 		fde2();
 
 		return fde2;
 	};
 	digitalZoomMain = fde1();
+	digitalZoomMain(resetZoom);
 }
 ////////  END CANVAS EFFECTS  ///////////////////
 
@@ -11080,8 +11214,14 @@ function printMyStats(menu, screenshare=false) { // see: setupStatsMenu
 			}
 		});
 		
+		if (session.promptAccess){
+			if (UUID && session.pcs[UUID]){
+				menu.innerHTML += "<button onclick='session.closePC(\""+UUID+"\");' style='border:solid 3px red;' title='This will disconnect this viewer from your stream.'>Disconnect this viewer</button>";
+			}
+		}
+		
 		if (UUID && session.pcs[UUID] && session.pcs[UUID].restartIce){ // only show if available
-			menu.innerHTML += "<button onclick='session.pcs[\""+UUID+"\"].restartIce();' title='This will trigger an ICE Restart, which may or may not help with some connection issues'>Restart connection</button>";
+			menu.innerHTML += "<button onclick='session.pcs[\""+UUID+"\"].restartIce();' title='This will trigger an ICE Restart, which may or may not help with some connection issues'>Trigger an ICE restart</button>";
 		}
 		
 		keys.forEach(key=>{
@@ -11105,7 +11245,7 @@ function printMyStats(menu, screenshare=false) { // see: setupStatsMenu
 				if (key == 'useragent') {
 					value = "<span style='cursor: pointer;' onclick='copyFunction(this.innerText,event);' title='Copy this user-agent to the clipboard' style='cursor:pointer'>"+value+"</span>"
 				}
-
+				
 				if (key == 'local_relay_IP') {
 					value = "<a href='https://whatismyipaddress.com/ip/" + value + "' target='_blank'>" + value + "</a>";
 				}
@@ -11146,6 +11286,8 @@ function printMyStats(menu, screenshare=false) { // see: setupStatsMenu
 				else if ((key == 'remote_ip_blocking') && value) {
 					value = "⚠️ They're blocking";
 					hint = 'no direct p2p connection made because of THEIR browser or system setting';
+				} else if ((key == 'label') && value) {
+					value = "<b style='color:pink;'>"+value+"</b>";
 				}
 				
 				stat = stat.replaceAll("_", " ");
@@ -11168,9 +11310,14 @@ function printMyStats(menu, screenshare=false) { // see: setupStatsMenu
 			if (session.pcs[UUID].savedBitrate){
 				menu.innerHTML += "<li><span>current bitrate target</span><span>" + session.pcs[UUID].savedBitrate + "</span></li>";
 			}
-			if (session.room!==false && !session.pcs[UUID].whipout && (session.meshcast!=="audio")){
+			if (!session.room && !session.pcs[UUID].whipout && (session.meshcast!=="audio")){
 				menu.innerHTML += "<li><span title='Only available if not in a group room'>adjust video bitrate</span><span><input class='thinSlider' title='Adjust the outbound bitrate for this stream.' type='range' value='"+(session.pcs[UUID].savedBitrate || session.pcs[UUID].setBitrate || 2500)+"' min='0' max='"+(session.pcs[UUID].setBitrate || 6000)+"' onchange='session.limitBitrate(\""+UUID+"\", parseInt(this.value));' /></span></li>";
+				
+				if (!session.hidehome ){
+					menu.innerHTML += "<center><a target='_blank' href='https://docs.vdo.ninja/guides/how-do-i-control-bitrate-quality'>More info on setting bitrates higher here</a></center>";
+				}
 			}
+			
 		}
 	}
 	
@@ -11984,7 +12131,7 @@ function updateLocalStats(){
 	var miniInfo = {}
 	if (changed){
 		miniInfo.out = {};
-		miniInfo.out.c = session.info.out.c
+		miniInfo.out.c = session.info.out.c;
 	}
 	
 	if (session.cpuLimited!==cpuLimited){
@@ -12001,7 +12148,7 @@ function updateLocalStats(){
 	
 	if (document.getElementById("head5")){
 		try{
-			if (Object.keys(session.pcs).length){
+			if (Object.keys(session.pcs).length || meshcastActive){
 				document.getElementById("head5").classList.remove("hidden");
 			}
 		} catch(e){}
@@ -12683,8 +12830,6 @@ session.hangup = function(reload=false, estop=false){
 		session.ws.close();
 	} catch(e){}
 	
-	
-	
 	try {
 		if (session.canvasSource && session.canvasSource.srcObject){
 			session.canvasSource.srcObject.getTracks().forEach(function(track) {
@@ -12743,6 +12888,10 @@ session.hangup = function(reload=false, estop=false){
 	
 	for (var sid in session.watchTimeoutList){
 		clearTimeout(session.watchTimeoutList[sid]);
+	}
+	
+	if (session.whipOut && session.whipOut.deleteme){
+		session.whipOut.deleteme();
 	}
 	
 	if (DebugLog && errorReport){
@@ -14887,7 +15036,7 @@ async function publishScreen() {
 		if (session.screensharebutton === true) {
 			getById("controlButtons").classList.remove("hidden");
 			getById("screensharebutton").className = "float";
-		}
+		} 
 
 		if (session.hangupbutton === true){
 			getById("controlButtons").classList.remove("hidden");
@@ -15226,7 +15375,9 @@ function publishWebcam(btn = false, miconly=false) {
 				if (session.forceAspectRatio){
 					await updateCameraConstraints("aspectRatio", session.forceAspectRatio);
 				}
-				if (session.effect && (session.effect === "7")){digitalZoom(true);}
+				if (session.effect && (session.effect === "7")){
+					digitalZoom(); // true needed to restart or start
+				}
 				updateForceRotate();
 				updateMixer();
 			}, 200);
@@ -15244,6 +15395,9 @@ function publishWebcam(btn = false, miconly=false) {
 						if (showReshare === hash){
 							getById("head3").classList.remove('hidden');
 							getById("head3a").classList.remove('hidden');
+						} else if (session.permaid === null){
+							getById("head3").classList.remove('hidden');
+							getById("head3a").classList.remove('hidden');						
 						}
 					}).catch(errorlog);
 				}
@@ -16241,7 +16395,14 @@ function outboundAudioPipeline(sourceStream=false){ // this function isn't letti
 			if (session.audioCtxOutbound){ // outbound implies 48000, since webrtc opus is 48000.  (pcm may be excepted)
 				// already Created
 			
-			} else if (Firefox || SafariVersion || session.mobile){ // does not support resampling or likely doesn't need to worry, so will error
+			} else if (session.outboundSampleRate){
+				try {
+					session.audioCtxOutbound = new AudioContext({sampleRate: session.outboundSampleRate});
+				} catch(e){
+					session.audioCtxOutbound = new AudioContext(); // legacy support
+					errorlog(e);
+				}
+			} else if ((session.outboundSampleRate===false) || Firefox || SafariVersion || session.mobile){ // does not support resampling or likely doesn't need to worry, so will error
 				session.audioCtxOutbound = new AudioContext();
 				
 			} else if (session.audioLatency !== false) { // session.audioLatency could be useful for fixing clicking issues?
@@ -16249,7 +16410,6 @@ function outboundAudioPipeline(sourceStream=false){ // this function isn't letti
 					latencyHint: session.audioLatency / 1000.0, // needs to be in seconds, but VDON user input is via milliseconds
 					sampleRate: 48000 // not sure this is a great idea, but might as well add this here, versus later on since it is needed anyways.
 				});
-				
 			} else {
 				try {
 					session.audioCtxOutbound = new AudioContext({sampleRate: 48000});
@@ -16398,6 +16558,8 @@ function outboundAudioPipeline(sourceStream=false){ // this function isn't letti
 				
 				let oscillator = session.audioCtxOutbound.createOscillator();
 				oscillator.frequency.value = 10;
+				
+				
 				const wave = session.audioCtxOutbound.createPeriodicWave(realCoeffs, imagCoeffs);
 				oscillator.setPeriodicWave(wave);
 				
@@ -16427,8 +16589,8 @@ function outboundAudioPipeline(sourceStream=false){ // this function isn't letti
 				mid.connect(lowEQ);
 				anonNode = lowEQ;
 			}
-
-
+			
+			
 			if (session.equalizer) { // https://webaudioapi.com/samples/frequency-response/ for a tool to help set values
 				webAudio.lowEQ = session.audioCtxOutbound.createBiquadFilter();
 				webAudio.lowEQ.type = "lowshelf";
@@ -16463,6 +16625,11 @@ function outboundAudioPipeline(sourceStream=false){ // this function isn't letti
 			if (session.micDelay!==false) {
 				webAudio.micDelay = micDelayNode(anonNode, session.audioCtxOutbound);
 				anonNode = webAudio.micDelay;
+			}
+			
+			if (session.twilio && session.twilio.element && session.twilio.element.srcObject && session.twilio.element.srcObject.getAudioTracks().length){
+				const source = session.audioCtxOutbound.createMediaStreamSource(session.twilio.element.srcObject);
+				source.connect(anonNode); // mix it in
 			}
 			
 			if (session.noisegate!==false){
@@ -17492,7 +17659,7 @@ function copyVideoFrameToClipboard(videoElement, e=false) {
 	}
 }
 
-function saveVideoFrameToClipboard(videoElement, e=false) {
+function saveVideoFrameToDisk(videoElement, e=false, filename=false) {
 	try{
 	  var canvas = document.createElement("canvas");
 
@@ -17507,7 +17674,9 @@ function saveVideoFrameToClipboard(videoElement, e=false) {
 
 	  canvas.toBlob(function(blob) {
 		var link = document.createElement("a");
-		if (e){
+		if (filename){
+			link.download = filename;
+		} else if (e){
 			link.download = (videoElement.id||"video")+"_"+parseInt(performance.now())+".png";
 		} else {
 			link.download = (videoElement.id||"video")+"_"+parseInt(Date.now())+".png";
@@ -17519,6 +17688,44 @@ function saveVideoFrameToClipboard(videoElement, e=false) {
 	  if (e){
 		popupMessage(e, "Saving current frame to disk");
 	  }
+	} catch(e){
+		errorlog(e);
+	}
+}
+
+function sendVideoFrameToIframe(videoElement, e=false, request={}) {
+	try{
+	  var canvas = document.createElement("canvas");
+
+	  canvas.width = videoElement.videoWidth;
+	  canvas.height = videoElement.videoHeight;
+
+	  var ctx = canvas.getContext("2d");
+	  ctx.drawImage(videoElement, 0, 0);
+
+	  var img = new Image();
+	  img.src = canvas.toDataURL();
+
+	  canvas.toBlob(function(blob) {
+		var response = {};
+		response.imageData = blob;
+		response.imageType = "png";
+		if (request.streamID){
+			response.streamID = request.streamID;
+		}
+		if (request.UUID){
+			response.UUID = request.UUID;
+		}
+		if (request.cib){
+			response.cib = request.cib;
+		}
+		if (videoElement.id){
+			response.videoID = videoElement.id;
+		}
+		
+		pokeIframeAPI("image-frame-capture", response)
+	  }, 'image/png');
+	  
 	} catch(e){
 		errorlog(e);
 	}
@@ -17987,7 +18194,9 @@ async function createRoomCallback(passAdd, passAdd2) {
 			if (session.forceAspectRatio){
 				await updateCameraConstraints("aspectRatio", session.forceAspectRatio);
 			}
-			if (session.effect && (session.effect === "7")){digitalZoom(true);}
+			if (session.effect && (session.effect === "7")){
+				digitalZoom();
+			}
 			updateForceRotate();
 			updateMixer();
 		}, 200);
@@ -18381,7 +18590,8 @@ async function createDirectorOnlyBox() {
 	var container = document.createElement("div");
 	container.className = "vidcon directorMargins";
 	container.id = "container_director"; // needed to delete on user disconnect
-	
+	container.setAttribute('aria-label', miscTranslations["your-camera"]);
+	container.setAttribute("role", "region");
 	
 	var buttons = "";
 	if (session.slotmode){
@@ -18580,7 +18790,8 @@ async function createDirectorScreenshareOnlyBox() { // sstype=3
 	var container = document.createElement("div");
 	container.className = "vidcon directorMargins";
 	container.id = "container_screen_director"; // needed to delete on user disconnect
-	
+	container.setAttribute('aria-label', miscTranslations["your-screenshare"]);
+	container.setAttribute("role", "region");
 	
 	var buttons = "";
 	if (session.slotmode){
@@ -18709,42 +18920,45 @@ async function createDirectorScreenshareOnlyBox() { // sstype=3
 		changeGroupDirectorAPI(group, false, false); // update the UI only /
 	});
 	
+	document.querySelectorAll("#container_screen_director  #label_director").forEach(elex=>{
+		elex.remove();
+	});
 	
-	var labelID = document.getElementById("label_director");
+	// var labelID = document.getElementById("label_director");
 	
-	labelID.onclick = async function(ee){
-		var oldlabel = ee.target.innerText;
-		if (session.label===false){
-			oldlabel = "";
-		}
-		window.focus();
-		var newlabel = await promptAlt(getTranslation("enter-new-display-name"), false, false, oldlabel); 
-		if (newlabel!==null){
-			newlabel = newlabel.trim();
-			if (newlabel === ""){
-				newlabel = false;
-				//ee.target.innerHTML = getTranslation("add-a-label");
-				miniTranslate(ee.target,"add-a-label");
-				ee.target.classList.add("addALabel");
-			} else {
-				ee.target.innerText = newlabel;
-				ee.target.classList.remove("addALabel");
-			}
-			session.label = newlabel;
-			var data = {};
-			data.changeLabel = true;
-			data.value = session.label;
-			session.sendMessage(data);
-		}
-	}
-	labelID.style.float = "left";
-	labelID.style.top = "2px";
-	labelID.style.marginLeft = "5px";
-	labelID.style.position  = "relative";
-	labelID.style.cursor="pointer";
-	if (session.label){
-		labelID.innerText = session.label;
-	}
+	// labelID.onclick = async function(ee){
+		// var oldlabel = ee.target.innerText;
+		// if (session.label===false){
+			// oldlabel = "";
+		// }
+		// window.focus();
+		// var newlabel = await promptAlt(getTranslation("enter-new-display-name"), false, false, oldlabel); 
+		// if (newlabel!==null){
+			// newlabel = newlabel.trim();
+			// if (newlabel === ""){
+				// newlabel = false;
+				ee.target.innerHTML = getTranslation("add-a-label");
+				// miniTranslate(ee.target,"add-a-label");
+				// ee.target.classList.add("addALabel");
+			// } else {
+				// ee.target.innerText = newlabel;
+				// ee.target.classList.remove("addALabel");
+			// }
+			// session.label = newlabel;
+			// var data = {};
+			// data.changeLabel = true;
+			// data.value = session.label;
+			// session.sendMessage(data);
+		// }
+	// }
+	// labelID.style.float = "left";
+	// labelID.style.top = "2px";
+	// labelID.style.marginLeft = "5px";
+	// labelID.style.position  = "relative";
+	// labelID.style.cursor="pointer";
+	// if (session.label){
+		// labelID.innerText = session.label;
+	// }
 	pokeIframeAPI("control-box", true, true);
 	if (session.slotmode){
 		pokeIframeAPI("slot-updated", biggestSlot, null, session.streamID+":s"); // need to support self-director
@@ -20728,8 +20942,83 @@ function gotDevicesNew(deviceInfos, miconly=false) {
 
 function getUserMediaVideoParams(resolutionFallbackLevel, isSafariBrowser) {
 	switch (resolutionFallbackLevel) {
+		
 		case -1:
 			return {};
+		case -2:
+			if (isSafariBrowser) {
+				return {
+					width: {
+						min: 360
+						, ideal: 3840
+						, max: 3840
+					}
+					, height: {
+						min: 360
+						, ideal: 2160
+						, max: 2160
+					}
+				};
+			} else if (Firefox){
+				return {
+					width: {
+						ideal: 3840
+					}
+					, height: {
+						ideal: 2160
+					}
+				};
+			} else {
+				return {
+					width: {
+						min: 720
+						, ideal: 3840
+						, max: 3840
+					}
+					, height: {
+						min: 720
+						, ideal: 2160
+						, max: 2160
+					}
+				};
+			}
+		case -3:
+			if (isSafariBrowser) {
+				return {
+					width: {
+						min: 360
+						, ideal: 2560
+						, max: 1440
+					}
+					, height: {
+						min: 360
+						, ideal: 1440
+						, max: 1440
+					}
+				};
+			} else if (Firefox){
+				return {
+					width: {
+						ideal: 2560
+					}
+					, height: {
+						ideal: 1440
+					}
+				};
+			} else {
+				return {
+					width: {
+						min: 720
+						, ideal: 2560
+						, max: 2560
+					}
+					, height: {
+						min: 720
+						, ideal: 1440
+						, max: 1440
+					}
+				};
+			}
 		case 0:
 			if (isSafariBrowser) {
 				return {
@@ -21698,7 +21987,7 @@ function playtone(screen = false, tonename="testtone") {
 
 	if (iOS || iPad) {
 		//	try{
-		//		session.audioContext.resume();
+		//		session.audioCtx.resume();
 		//	} catch(e){errorlog(e);}
 		var toneEle = document.getElementById(tonename);
 		if (toneEle) {
@@ -23298,7 +23587,7 @@ async function grabScreen(quality = 0, audio = true, videoOnEnd = false) {
 }
 
 function toggleBufferSettings(UUID){
-	
+	getById('bufferSettings').dataset.UUID = UUID;
 	toggle(getById('bufferSettings'));
 	if (getById('bufferSettings').style.display=="none"){
 		getById("modalBackdrop").innerHTML = ''; // Delete modal
@@ -24110,44 +24399,51 @@ async function grabVideo(quality = 0, eleName = 'previewWebcam', selector = "sel
 						}
 					} catch(e){errorlog(e);}
 					
-					if (session.whiteBalance){
+					if (session.whiteBalance!==false){
 						try {
 							await track.applyConstraints({advanced: [ {whiteBalanceMode: "manual", colorTemperature: parseInt(session.whiteBalance)} ]});
 						} catch(e){
 							errorlog(e);
 						}
 					}
-					if (session.exposure){
+					if (session.exposure!==false){
 						try {
 							await track.applyConstraints({advanced: [ {exposureMode: "manual", exposureTime: parseInt(session.exposure)} ]});
 						} catch(e){
 							errorlog(e);
 						}
 					}
-					if (session.saturation){
+					if (session.saturation!==false){
 						try {
 							await track.applyConstraints({advanced: [ {saturation: parseInt(session.saturation)} ]});
 						} catch(e){
 							errorlog(e);
 						}
 					}
-					if (session.sharpness){
+					if (session.sharpness!==false){
 						try {
 							await track.applyConstraints({advanced: [ {sharpness: parseInt(session.sharpness)} ]});
 						} catch(e){
 							errorlog(e);
 						}
 					}
-					if (session.contrast){
+					if (session.contrast!==false){
 						try {
 							await track.applyConstraints({advanced: [ {contrast: parseInt(session.contrast)} ]});
 						} catch(e){
 							errorlog(e);
 						}
 					}
-					if (session.brightness){
+					if (session.brightness!==false){
 						try {
 							await track.applyConstraints({advanced: [ {brightness: parseInt(session.brightness)} ]});
+						} catch(e){
+							errorlog(e);
+						}
+					}
+					if (session.focusDistance!==false){
+						try {
+							await track.applyConstraints({advanced: [ {focusMode:"manual", focusDistance: parseInt(session.focusDistance)} ]});
 						} catch(e){
 							errorlog(e);
 						}
@@ -24747,6 +25043,7 @@ async function grabAudio(selector = "#audioSource", trackid = null, override = f
 	if (callback){
 		callback();
 	}
+	
 	senderAudioUpdate(callbackUUID);
 }
 
@@ -25377,6 +25674,11 @@ function senderAudioUpdate(callback=false, tracks=false){
 				session.sendMessage(data, data.UUID);
 			} catch(e){}
 		}
+		
+		if (session.twilio){
+			session.twilio.updateMixer();
+		}
+		
 	} catch (e) {
 		errorlog(e);
 	}
@@ -25970,7 +26272,8 @@ session.postPublish = async function(){
 	if (session.welcomeMessage){
 		stickyMessage(session.welcomeMessage);
 		// getChatMessage(session.welcomeMessage, false, true, true);
-	} else if (session.queue && ((session.queueType==3) || (session.queueType==4)) && !session.director){
+	}
+	if (session.queue && ((session.queueType==3) || (session.queueType==4)) && !session.director){
 		youreWaitingToBeActivated();
 	}
 	
@@ -26180,10 +26483,27 @@ async function publishScreen2(constraints, audioList=[], audio=true, overrideFra
 		 // OR, jump right in, and let user change from there
 		if (session.roomid!==false){
 			if ((session.roomid==="") && ((!session.view) || (session.view===""))){
+				if (session.manual===null){
+					session.manual = true;
+				}
+				if (!(session.cleanOutput)) {
+					var showReshare = getStorage("showReshare");
+					if (showReshare){
+						generateHash(session.streamID + session.salt + "bca321", 4).then(function(hash) { // million to one error. 
+							if (showReshare === hash){
+								getById("head3").classList.remove('hidden');
+								getById("head3a").classList.remove('hidden');
+							} else if (session.permaid === null){
+								getById("head3").classList.remove('hidden');
+								getById("head3a").classList.remove('hidden');						
+							}
+						}).catch(errorlog);
+					}
+				}
 				
 			} else {
 				getById("head3").classList.add('hidden');
-				getById("head3a").classList.add('hidden');
+				getById("head3a").classList.add('hidden'); 
 				log("ROOMID EANBLED");
 				log("Update Mixer Event on REsize SET");
 				window.onresize = updateMixer;
@@ -26195,7 +26515,9 @@ async function publishScreen2(constraints, audioList=[], audio=true, overrideFra
 						if (session.forceAspectRatio){
 							await updateCameraConstraints("aspectRatio", session.forceAspectRatio);
 						}
-						if (session.effect && (session.effect === "7")){digitalZoom(true);}
+						if (session.effect && (session.effect === "7")){
+							digitalZoom();
+						}
 						updateForceRotate();
 						updateMixer();
 					}, 200);
@@ -26381,7 +26703,9 @@ async function publishScreen2(constraints, audioList=[], audio=true, overrideFra
 					if (session.forceAspectRatio){
 						await updateCameraConstraints("aspectRatio", session.forceAspectRatio);
 					}
-					if (session.effect && (session.effect === "7")){digitalZoom(true);}
+					if (session.effect && (session.effect === "7")){
+						digitalZoom();
+					}
 					updateForceRotate();
 					updateMixer();
 				}, 200);
@@ -26787,7 +27111,33 @@ function updateReshareLink(){
 			wss = "&wss="+session.wss;
 		}
 	}
-	
+	if (session.audience && !session.audienceToken){
+		if (document.getElementById("reshare")){
+			if (!session.cleanOutput){
+				getById("copythisurl").innerHTML = "";
+				getById("head3a").classList.remove('hidden');
+			}
+			document.getElementById("reshare").href = null;
+			document.getElementById("reshare").text = "loading public view link...";
+			document.getElementById("reshare").style.width = ((document.getElementById("reshare").text.length + 1)*1.15 * 8) + 'px';
+		}
+		return;
+	} else if (session.audience){
+		var shareLink = "https://"+location.host+location.pathname+"?view="+session.streamID+added+wss+"&audience="+session.audienceToken;
+		if (document.getElementById("reshare")){
+			if (!session.cleanOutput){
+				getById("head3").classList.remove('hidden');
+				getById("head3a").classList.remove('hidden');
+				getById("copythisurl").innerHTML = '<span data-translate="copy-audience-url">This is your public audience link</span> <i style="color: #CCC;" class="las la-long-arrow-alt-right"></i> &nbsp; ';
+				
+			}
+			document.getElementById("reshare").href = shareLink;
+			document.getElementById("reshare").text = shareLink;
+			document.getElementById("reshare").style.width = ((document.getElementById("reshare").text.length + 1)*1.15 * 8) + 'px';
+		}
+		pokeIframeAPI('share-link', shareLink);
+		return;
+	}
 	var shareLink = "https://"+location.host+location.pathname+"?view="+session.streamID+added+wss;
 	if (document.getElementById("reshare")){
 		document.getElementById("reshare").href = shareLink;
@@ -31554,6 +31904,264 @@ async function requestBasicPermissions(constraint = {video: true, audio: true}, 
 	return null
 }
 
+function awaitInboundCall(){
+	if (session.twilio){return;}
+	loadScript('./thirdparty/twilio.min.js?v1', async function() {
+		
+		if (!session.twilio){session.twilio = {};}
+		
+		class MyAudioProcessor {
+		  constructor(audioContext) {
+			console.log("constructor");
+			this.audioContext = session.audioCtxOutbound;
+			session.twilio.mixer = session.audioCtxOutbound.createGain(); // This serves as our mixer node
+			this.destination = session.twilio.destination = session.audioCtxOutbound.createMediaStreamDestination(); // Destination node
+			this.background = this.audioContext.createMediaElementSource(document.createElement("video"));
+		  }
+
+		  async createProcessedStream(stream) {
+			  
+			const source = this.audioContext.createMediaStreamSource(stream);
+			const gain = this.audioContext.createGain();
+			gain.gain.value = 0;
+			source.connect(gain);
+			gain.connect(session.twilio.mixer);
+			// session.twilio.micSources.push(stream);
+			
+			session.twilio.mixer.connect(this.destination);
+			return this.destination.stream;
+		  }
+
+		  async destroyProcessedStream(stream) {
+			   console.log("destroyProcessedStream called");
+			   console.log(stream);
+		  }
+		}
+
+		const response = await fetch('https://call.vdo.ninja:8443/token2');
+		session.twilio.data = await response.json();
+
+		session.twilio.device = new Twilio.Device(session.twilio.data.token);
+		
+		const audioProcessor = new MyAudioProcessor();
+		await session.twilio.device.audio.addProcessor(audioProcessor);
+		
+		session.twilio.device.register();
+		
+		warnUser("Dial in access code: "+session.twilio.data.dialInNumber);
+
+		session.twilio.device.on('registered', function() {
+			console.log('Twilio.Device is ready to receive incoming calls!');
+		});
+		
+		async function refresh(){
+			console.log("refreshing token");
+			const response = await fetch('https://call.vdo.ninja:8443/refresh');
+			session.twilio.data = await response.json();
+			session.twilio.device.updateToken(session.twilio.data.token);
+		}
+		
+		session.twilio.refreshInterval = setInterval(refresh, 50 * 60 * 1000);
+		
+		session.twilio.micSources = [];
+	
+		session.twilio.updateMixer = async function(UUID=false){
+			try {
+				console.log("update mixer");
+				session.twilio.micSources.forEach(src=>{
+					src.disconnect();
+				});
+				
+				if (session.videoElement && session.videoElement.srcObject && session.videoElement.srcObject.getAudioTracks().length){
+					var micSource = session.audioCtxOutbound.createMediaStreamSource(session.videoElement.srcObject);
+				} else if (session.streamSrc && session.streamSrc.getAudioTracks().length){
+					var micSource = session.audioCtxOutbound.createMediaStreamSource(session.streamSrc);
+				} else {
+					var micSource = false;
+				}
+				
+				for (var uuid in session.rpcs){
+					try{
+						if (session.rpcs[uuid].videoElement && session.rpcs[uuid].videoElement.srcObject){
+							var guestSource = session.audioCtxOutbound.createMediaStreamSource(session.rpcs[uuid].videoElement.srcObject);
+							if (guestSource){
+								guestSource.connect(session.twilio.mixer);
+								session.twilio.micSources.push(guestSource);
+								console.log(uuid+" added to twiliio");
+							}
+						}
+					} catch(e){errorlog(e);}
+				}
+				
+				if (micSource){
+					micSource.connect(session.twilio.mixer);
+					session.twilio.micSources.push(micSource);
+					console.log("micSource added to twiliio");
+				}
+			} catch (err) {
+				console.error('Could not get microphone audio:', err);
+			}
+		};
+
+		session.twilio.device.on('incoming', (call) => {
+			session.twilio.call = call;
+			console.log('Incoming call from: ' + session.twilio.call.parameters.From);
+			
+			session.twilio.call.on('reject', () => {console.log("rejected");});
+			session.twilio.call.on('disconnect', () => {console.log("disconnected");});
+			session.twilio.call.on('cancel', () => {console.log("cancelled");});
+			session.twilio.call.on('accept', () => {console.log("accpted");});
+			session.twilio.call.on('audio', (e) => {
+				session.twilio.element = e;
+				console.log("audio stream available");
+				outboundAudioPipeline(session.streamSrc);
+			});
+			
+			window.focus();
+			confirmAlt('Incoming call from: ' + session.twilio.call.parameters.From+"\n"+getTranslation("accept-inbound-caller")).then(res=>{
+				if (res){
+					if (session.audioCtxOutbound.state === "suspended") {
+						session.audioCtxOutbound.resume().then(() => {
+							console.log("AudioContext resumed");
+						});
+					}
+					session.twilio.updateMixer();
+					session.twilio.call.accept();
+				} else {
+					session.twilio.call.reject();
+				}
+			});
+		});
+	});
+}
+
+function joinConference(roomid, mute=true){ // not used
+	loadScript('./thirdparty/twilio.min.js', function() {
+		fetch('https://call.vdo.ninja:8443/token')
+		.then(response => response.json())
+		.then(async data => {
+			const device = new Twilio.Device(data.token);
+			call = await device.connect({params: {"To": roomid}});
+			if (mute){
+				const checkForRemoteStream = setInterval(() => {
+					if (call.getRemoteStream && call.getRemoteStream()){
+						if (call.getRemoteStream().getTracks && call.getRemoteStream().getTracks().length){
+							clearInterval(checkForRemoteStream);
+							call.getRemoteStream().getTracks()[0].enabled = false;
+							console.log("call muted");
+						}
+					};
+				}, 500);
+			}
+		})
+		.catch(error => {
+			console.error('Error fetching token: ', error);
+		});
+	});
+}
+
+function listenWebsocket(roomid){ // not used
+	var callSocket = null;
+	var connecting = false;
+	var streams = {};
+	function connectAudioInbound(){
+		clearTimeout(connecting);
+		if (callSocket){
+			if (callSocket.readyState === callSocket.OPEN){return;}
+			try{
+				callSocket.close();
+			} catch(e){}
+		}
+		callSocket = new WebSocket("wss://call.vdo.ninja:8443/"+roomid);
+		callSocket.onclose = function (){
+			clearTimeout(connecting);
+			connecting = setTimeout(function(){connectAudioInbound();},100);
+		};
+		callSocket.onopen = function (){
+			send({"join":true});
+		};
+		callSocket.addEventListener('message', function (event) {
+			var msg = JSON.parse(event.data);
+			if (msg.event && (msg.event === "media") && msg.media && msg.media.payload && msg.streamSid) {
+				playAudioChunk(msg.media.payload, msg.streamSid);
+				if (!streams[msg.streamSid]){
+					console.log("stream starting");
+					streams[msg.streamSid] = true;
+					//audioStreams.innerHTML = "";
+					//for (stream in streams){
+					//	audioStreams.innerHTML += stream+"<br />";
+					//}
+					console.log(streams);
+				}
+			} else if (msg.event && (msg.event === "stop") && msg.streamSid) {
+				console.log("stream stopping");
+				delete streams[msg.streamSid];
+				//audioStreams.innerHTML = "";
+				//for (stream in streams){
+				//	audioStreams.innerHTML += stream+"<br />";
+				//}
+				console.log(streams);
+			}// else {
+			//	console.log(msg);
+			//	console.log("stream misc");
+			//	console.log(streams);
+			//}
+		});
+	}
+	
+	function base64ToUint8Array(base64) {
+		const binaryString = window.atob(base64);
+		const len = binaryString.length;
+		const bytes = new Uint8Array(len);
+		for (let i = 0; i < len; i++) {
+			bytes[i] = binaryString.charCodeAt(i);
+		}
+		return bytes;
+	}
+	function muLawToPCM(muLawData, gainFactor = 2.0, threshold = 30000, ratio = 2.0) {
+		const pcmData = new Int16Array(muLawData.length);
+		for (let i = 0; i < muLawData.length; i++) {
+			let muLawByte = muLawData[i];
+			muLawByte = ~muLawByte;
+			let sign = (muLawByte & 0x80);
+			muLawByte &= ~(0x80);
+			let exponent = (muLawByte >> 4) & 0x07;
+			let data = muLawByte & 0x0F;
+			data |= 0x10;
+			data <<= 1;
+			data += 1;
+			data <<= exponent + 2;
+			data -= 0x84;
+			if (sign === 0) data = -data;
+			let amplifiedData = data * gainFactor;
+			if (Math.abs(amplifiedData) > threshold) {
+				const overThreshold = Math.abs(amplifiedData) - threshold;
+				const compressedData = threshold + (overThreshold / ratio);
+				amplifiedData = (amplifiedData > 0) ? compressedData : -compressedData;
+			}
+			pcmData[i] = amplifiedData;
+		}
+		return pcmData;
+	}
+	function playAudioChunk(base64Chunk, sid) {
+		const muLawData = base64ToUint8Array(base64Chunk);
+		const pcmData = muLawToPCM(muLawData);
+		const audioBuffer = session.audioCtx.createBuffer(1, pcmData.length, 8000);
+		const bufferSource = session.audioCtx.createBufferSource();
+		const channelData = audioBuffer.getChannelData(0);
+		for (let i = 0; i < pcmData.length; i++) {
+			channelData[i] = pcmData[i] / 32768.0;
+		}
+		bufferSource.buffer = audioBuffer;
+		bufferSource.connect(session.audioCtx.destination);
+		bufferSource.start();
+	}
+	function send(cmd){
+		callSocket.send(JSON.stringify(cmd));
+	}
+	connectAudioInbound();
+}
+
 function setupWebcamSelection(miconly=false) {
 	log("setupWebcamSelection();");
 	
@@ -32200,7 +32808,9 @@ function previewWebcam(miconly=false) {
 			if (session.forceAspectRatio){
 				await updateCameraConstraints("aspectRatio", session.forceAspectRatio);
 			}
-			if (session.effect && (session.effect === "7")){digitalZoom(true);}
+			if (session.effect && (session.effect === "7")){
+				digitalZoom();
+			}
 			updateForceRotate(); 
 		}, 200);
 	};
@@ -33005,7 +33615,7 @@ function pauseVideo(videoEle, update=true){
 		} else if (link.getAttribute("data-action") === "CopyFrameAsImage") {
 			copyVideoFrameToClipboard(taskItemInContext, e);
 		} else if (link.getAttribute("data-action") === "SaveFrameToDisk") {
-			saveVideoFrameToClipboard(taskItemInContext, e);
+			saveVideoFrameToDisk(taskItemInContext, e);
 		} else if (link.getAttribute("data-action") === "ChangeBuffer") { 
 			toggleBufferSettings(taskItemInContext.dataset.UUID);
 		} else if (link.getAttribute("data-action") === "Cast") {
@@ -33798,6 +34408,7 @@ function createPopoutChat() {
 	if (session.broadcastChannelID===false){
 		session.broadcastChannelID = session.generateStreamID(8);
 		log(session.broadcastChannelID);
+
 		session.broadcastChannel = new BroadcastChannel(session.broadcastChannelID);
 		session.broadcastChannel.onmessage = function(e) {
 			if ("loaded" in e.data) {
@@ -33807,6 +34418,10 @@ function createPopoutChat() {
 			} else if ("msg" in e.data) {
 				sendChatMessage(e.data.msg, true);
 			}
+		}
+		
+		session.broadcastChannel.onmessageerror = function(e) {
+			errorlog(e);
 		}
 	}
 	window.open('./popout.html?id=' + session.broadcastChannelID, 'popup', 'width=600,height=480,toolbar=no,menubar=no,resizable=yes');
@@ -33973,7 +34588,87 @@ function getChatMessage(msg, label = false, director = false, overlay = false, U
 
 }
 
-function updateClosedCaptions(msg, label, UUID) {
+function rainbow(step, colours) {
+	var r, g, b;
+	var h = 1 - (step / colours);
+	var i = ~~(h * 6);
+	var f = h * 6 - i;
+	var q = 1 - f;
+	switch(i % 6){
+		case 0: r = 1, g = f, b = 0; break;
+		case 1: r = q, g = 1, b = 0; break;
+		case 2: r = 0, g = 1, b = f; break;
+		case 3: r = 0, g = q, b = 1; break;
+		case 4: r = f, g = 0, b = 1; break;
+		case 5: r = 1, g = 0, b = q; break;
+	}
+	var c = "#" + ("00" + (~ ~(r * 200+35)).toString(16)).slice(-2) + ("00" + (~ ~(g * 200 +35)).toString(16)).slice(-2) + ("00" + (~ ~(b * 200 +35)).toString(16)).slice(-2);
+	return (c);
+}
+
+function getColorFromName(str, colorseed=false, totalcolors=false, ) {
+  var out = 0, len = str.length;
+  if (len>6){
+	  len = 6;
+  }
+  
+  var seed = 26;
+  if (colorseed){
+	seed = colorseed || 1;
+  } 
+  
+  for (var pos = 0; pos < len; pos++) {
+    out += (str.charCodeAt(pos) - 64) * Math.pow(seed, len - pos - 1);
+  }
+  
+  var colours = 167772;
+  
+  if (totalcolors){
+	  colours = totalcolors;
+	  if (colours>167772){
+		  colours = 167772;
+	  } else if (colours<1){
+		  colours = 1;
+	  }
+  } 
+  
+  out = parseInt(out%colours); // get modulus
+  
+  if (colours===1){
+	  return "#F00";
+  } else if (colours===2){
+	  switch(out){
+		case 0: return "#F00";
+		case 1: return "#00ABFA";
+		}
+  } else if (colours===3){
+	   switch(out){
+		case 0: return "#F00";
+		case 1: return "#00A800";
+		case 2: return "#00ABFA";
+	   }
+  } else if (colours===4){
+	  switch(out){
+		case 0: return "#F00";
+		case 1: return "#FFA500";
+		case 2: return "#00A800";
+		case 3: return "#00ABFA";
+	   }
+  } else if (colours===5){
+	  switch(out){
+		case 0: return "#F00";
+		case 1: return "#FFA500";
+		case 2: return "#00A800";
+		case 3: return "#00ABFA";
+		case 4: return "#FF39C5";
+	  }
+	} else {
+	out = rainbow(out,colours);
+  }
+  return out;
+}
+
+function updateClosedCaptions(msg, label, UUID, color=false) {
 	msg.counter = parseInt(msg.counter);
 	var temp = document.createElement('div');
 	temp.innerText = msg.transcript;
@@ -33986,10 +34681,11 @@ function updateClosedCaptions(msg, label, UUID) {
 
 	transcript = transcript.charAt(0).toUpperCase() + transcript.slice(1);
 	//transcript = transcript.substr(-1, 5000); // keep it from being too long
-
+	
 	if (session.nocaptionlabels){
 		label = "";
 	} else if (label && (!(session.view && !session.view_set))) {
+		
 		label = sanitizeLabel(label);
 		label = "<b>" + label + ":</b> ";
 	} else {
@@ -34011,10 +34707,15 @@ function updateClosedCaptions(msg, label, UUID) {
 			textOverlay.style.bottom = "0";
 			
 		}
+
 		spanOverlay.innerHTML = label + transcript + "<br />";
 		spanOverlay.style.fontSize = (parseInt(session.labelsize || 100) / 100.0 * 4.5) + "vh";
 		spanOverlay.style.lineHeight = (parseInt(session.labelsize || 100) / 100 * 6) + "vh";
 		spanOverlay.style.margin = (parseInt(session.labelsize || 100) / 100.0 * 0.75) + "vh";
+		
+		if (color){
+			spanOverlay.style.color = color;
+		}
 
 		if (msg.isFinal) {
 			var showtime = 3000;
@@ -35077,6 +35778,9 @@ async function recordVideo(target, event = null, videoKbps = false) { // event.c
 				updateLocalRecordButton(UUID, -1);
 				target.style.backgroundColor = "";
 				
+				try {
+					clearInterval(video.recorder.writer.interval);
+				} catch(e){}
 				
 				delete(video.recorder);
 				delete(video.recording);
@@ -35808,7 +36512,7 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 	} else {
 		var video = session.videoElement;
 	}
-	
+	 
 	if (!video){
 		warnlog("video not found");
 		return;
@@ -35931,6 +36635,7 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 	video.recorder.eStop = function() {
 		try {
 			video.recorder.writer.close();
+			clearInterval(video.recorder.writer.interval);					  
 		} catch(e){}
 	}
 
@@ -36009,7 +36714,12 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 		
 		setTimeout((videoKbps, altUUID, video) => {
 			try {
-				video.recorder.writer.close();
+				video.recorder.writer.close();	 				
+			} catch(e){
+				errorlog(e);
+			}
+			try {
+				clearInterval(video.recorder.writer.interval);		 				
 			} catch(e){
 				errorlog(e);
 			}
@@ -36217,7 +36927,11 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 		if (!audioTrack){
 			errorlog("Failing the recording; no audio track");
 			try {
-				video.recorder.writer.close();
+				video.recorder.writer.close();					
+			} catch(e){}
+			
+			try {
+				clearInterval(video.recorder.writer.interval);						
 			} catch(e){}
 			
 			try {
@@ -36258,6 +36972,10 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 					errorlog("Fail safe failed; closing the recording");
 					try {
 						video.recorder.writer.close();
+					} catch(e){}
+					
+					try {
+						clearInterval(video.recorder.writer.interval);
 					} catch(e){}
 					
 					try {
@@ -36309,12 +37027,39 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 			
 	}
 	log(options);
-
-	function handleDataAvailable(event) {
+	
+	var chunkQueue = [];
+	function handleDataAvailable(event, process=true) {
+		
+		while (chunkQueue.length && process){
+			ret = handleDataAvailable(chunkQueue.shift(), false);
+			if (ret===false){
+				return; // cancel.
+			}
+		}
+		
 		if (event.data && event.data.size > 0) {
 			try {
 				if (video && video.recorder && video.recorder.writer){ // video.recorder.closing
-					video.recorder.writer.write(event.data);
+					try {
+						if (video.recorder.writer._ownerWritableStream._state==="writable"){
+							video.recorder.writer.write(event.data);
+						} else {
+							throw new Error('Writer not open');
+						}
+					} catch(e){
+						if (process===true){
+							chunkQueue.push(event);
+						} else {
+							chunkQueue.unshift(event);
+							return false;
+						}
+					}
+				} else if (process===true){
+					chunkQueue.push(event);
+				} else {
+					chunkQueue.unshift(event);
+					return false;
 				}
 			} catch(e){
 				errorlog(e);
@@ -36359,15 +37104,47 @@ async function recordLocalVideo(action = null, videoKbps = false, remote=false, 
 	};
 
 	try {
-		var {readable, writable} = new TransformStream({
-			transform: (chunk, ctrl) => chunk.arrayBuffer().then(b => ctrl.enqueue(new Uint8Array(b)))
-		});
-		console.log(writable);
-		console.log(video);
-		var writer = await writable.getWriter();
-		console.log(writer);
-		readable.pipeTo(streamSaver.createWriteStream(filename.toString() + filext,  video.recorder.stop));
-		video.recorder.writer = writer;
+		video.recorder.iteration = 0;
+	
+		video.recorder.setupWriter = async function setupWriter(video){
+			if (video.recorder.writer){
+				try {
+					video.recorder.writer.close();
+					await sleep(1000);
+					// we don't cancel the interval obviously
+				} catch(e){
+					errorlog(e);
+				}
+			}
+			var {readable, writable} = new TransformStream({
+				transform: (chunk, ctrl) => chunk.arrayBuffer().then(b => ctrl.enqueue(new Uint8Array(b)))
+			});
+			var writer = await writable.getWriter();
+			var addon = "";
+			if (video.recorder.iteration != 0){
+				addon = "_"+video.recorder.iteration;
+			}
+			video.recorder.iteration += 1;
+			readable.pipeTo(streamSaver.createWriteStream(filename.toString() + filext + addon,  video.recorder.stop));
+			video.recorder.writer = writer;
+		}
+		
+		await video.recorder.setupWriter(video)
+		
+		if (session.recordingInterval){ // minutes
+			function intervalClosure(video){
+				var intervalId = setInterval(function(video){
+					try {
+						video.recorder.setupWriter(video);
+					} catch(e){
+						clearInterval(intervalId);
+					}
+				},1000*60*session.recordingInterval, video);
+				video.recorder.writer.interval = intervalId;
+			}
+			intervalClosure(video);
+		}
+		
 		
 		video.recorder.mediaRecorder.start(1000); // 100ms chunks
 		console.log("started recording");
@@ -36655,6 +37432,9 @@ session.onTrack = function(event, UUID){
 		}
 	}
 	
+	if (session.twilio && audioAdded){
+		session.twilio.updateMixer(UUID);
+	}
 	return session;
 	
 };
@@ -37040,25 +37820,27 @@ function batteryMeterInfoUpdate(UUID){
 	}
 }
 
+
 function setupGuestLabelControl(UUID){
 	var labelID = getById("label_"+UUID);
 	if (labelID){
 		labelID.classList.add("contolboxLabel");
 		labelID.dataset.UUID = UUID;
+		
 		if (session.rpcs[UUID].label){ 
 			labelID.innerText = session.rpcs[UUID].label; // Replace underscores with a Space when publishing to HTML. No Double spaces.
 			labelID.classList.remove("addALabel");
+			
 		} else if (session.directorUUID === UUID){
 			miniTranslate(labelID,"main-director");
-			//labelID.innerHTML = getTranslation("main-director");
 			labelID.classList.remove("addALabel");
+			
 		} else if (session.directorList.indexOf(UUID)>=0){
 			miniTranslate(labelID,"co-director");
-			//labelID.innerHTML = getTranslation("co-director");
 			labelID.classList.remove("addALabel");
+			
 		} else {
 			miniTranslate(labelID,"add-a-label");
-			//labelID.innerHTML = getTranslation("add-a-label"); // Replace underscores with a Space when publishing to HTML. No Double spaces.
 			labelID.classList.add("addALabel");
 		}
 		labelID.onclick = async function(ee){
@@ -37097,40 +37879,82 @@ function setupGuestLabelControl(UUID){
 			}
 		}
 	}
+	updateAriaLabel(UUID);
+}
+
+function updateAriaLabel(UUID=false){
+	if (!(UUID in session.rpcs)){
+		return;
+	}
+	
+	var element = document.getElementById("container_"+UUID);
+	if (!element){
+		return;
+	}
+	var sid = "";
+	if (session.rpcs[UUID].streamID){
+		sid = ": "+session.rpcs[UUID].streamID;
+	}
+	
+	if (session.rpcs[UUID].label){
+		element.setAttribute('aria-label', session.rpcs[UUID].label);
+		
+	} else if (session.directorUUID === UUID){
+		element.setAttribute('aria-label', (getTranslation("main-director") || "Main Director")+sid);
+		
+	} else if (session.directorList.indexOf(UUID)>=0){
+		element.setAttribute('aria-label', (getTranslation("co-director") || "Co Director") +sid);
+		
+	} else if (sid){
+		element.setAttribute('aria-label', "ID"+sid);
+		
+	} else {
+		element.setAttribute('aria-label', (getTranslation("undefined") || "Undefined"));
+	}
+	
+	element.setAttribute("role", "region");
 }
 
 function updateLabelDirectors(UUID){
 	var elements = getById("label_"+UUID);
-	if (session.rpcs[UUID].label){
-		elements.innerText = session.rpcs[UUID].label;
-		elements.classList.remove("addALabel");
-	} else if (session.directorUUID === UUID){
-		//elements.innerHTML = getTranslation("main-director");
-		miniTranslate(elements,"main-director");
-		elements.classList.remove("addALabel");
-	} else if (session.directorList.indexOf(UUID)>=0){
-		miniTranslate(elements,"co-director");
-		elements.classList.remove("addALabel");
-	} else {
-		//elements.innerHTML = getTranslation("add-a-label");
-		miniTranslate(elements,"add-a-label");
-		elements.classList.add("addALabel");
+	if (elements){
+		if (session.rpcs[UUID].label){
+			elements.innerText = session.rpcs[UUID].label;
+			elements.classList.remove("addALabel");
+			
+		} else if (session.directorUUID === UUID){
+			miniTranslate(elements,"main-director");
+			elements.classList.remove("addALabel");
+			
+		} else if (session.directorList.indexOf(UUID)>=0){
+			miniTranslate(elements,"co-director");
+			elements.classList.remove("addALabel");
+			
+		} else {
+			miniTranslate(elements,"add-a-label");
+			elements.classList.add("addALabel");
+		}
 	}
+	updateAriaLabel(UUID);
 }
+
 function updateLabelDirectors2(UUID){
 	var elements = getById("label_"+UUID);
-	if (session.directorUUID === UUID){
-		//elements.innerHTML = getTranslation("main-director");
-		miniTranslate(elements,"main-director");
-		elements.classList.remove("addALabel");
-	} else if (session.directorList.indexOf(UUID)>=0){
-		miniTranslate(elements,"co-director");
-		elements.classList.remove("addALabel");
-	} else {
-		//elements.innerHTML = getTranslation("add-a-label");
-		miniTranslate(elements,"add-a-label");
-		elements.classList.add("addALabel");
+	if (elements){
+		if (session.directorUUID === UUID){
+			miniTranslate(elements,"main-director");
+			elements.classList.remove("addALabel");
+			
+		} else if (session.directorList.indexOf(UUID)>=0){
+			miniTranslate(elements,"co-director");
+			elements.classList.remove("addALabel");
+			
+		} else {
+			miniTranslate(elements,"add-a-label");
+			elements.classList.add("addALabel");
+		}
 	}
+	updateAriaLabel(UUID);
 }
 
 function directorCoDirectorColoring(UUID){
@@ -37945,6 +38769,7 @@ function audioMeterGuest(mediaStreamSource, UUID, trackid){
 
 function effectsDynamicallyUpdate(event, ele){
 	log("effectsDynamicallyUpdate");
+	let lastEffectValue = session.effect;
 	session.effect = ele.options[ele.selectedIndex].value;
 	
 	getById("selectImageTFLITE").style.display = "none";
@@ -37984,7 +38809,7 @@ function effectsDynamicallyUpdate(event, ele){
 		updateRenderOutpipe();
 		return;
 	}
-	
+	 
 	if (session.effect == "3a"){
 		session.effect = "3";
 		session.effectValue = 5;
@@ -37999,10 +38824,12 @@ function effectsDynamicallyUpdate(event, ele){
 		updateRenderOutpipe();
 		return;
 	} else if (session.effect === "3" || session.effect === "4"){
-		attemptTFLiteJsFileLoad();
-		if (!session.tfliteModule.looping){
-			updateRenderOutpipe();
-		} 
+		if (!["3","4","5"].includes(lastEffectValue)){
+			attemptTFLiteJsFileLoad();
+			if (!session.tfliteModule.looping){
+				updateRenderOutpipe();
+			} 
+		}
 		if ((session.effect === "3") && (session.effectValue_default==false)){
 			getById("selectEffectAmount").style.display = "block";
 			getById("selectEffectAmount3").style.display = "block";
@@ -38018,9 +38845,11 @@ function effectsDynamicallyUpdate(event, ele){
 			getById("selectEffectAmountInput3").value = session.effectValue;
 		}
 	} else if (session.effect === "5"){
-		attemptTFLiteJsFileLoad();
-		if (!session.tfliteModule.looping){
-			updateRenderOutpipe();
+		if (!["3","4","5"].includes(lastEffectValue)){
+			attemptTFLiteJsFileLoad();
+			if (!session.tfliteModule.looping){
+				updateRenderOutpipe();
+			}
 		}
 		loadTFLITEImages();
 	} else if (session.effect === "6"){
@@ -38682,6 +39511,12 @@ function targetGuest(target, action, value=null){
 			element.value = 1;
 			return directTimer(element);
 		}
+	} else if (Commands[action]){
+		try {
+			return Commands[action](value, target);
+		} catch(e){
+			errorlog(e);
+		}
 	}
 	return false;
 }
@@ -38806,64 +39641,46 @@ function resizeWindow(width, height){
 
 function configureWhipOutSDP(description){ // THIS IS FOR WHIP-OUTPUT; it has 
 
-	var configs = false;
+	var configs = {};
 	
 	if (SafariVersion && (SafariVersion<=13) && (iOS || iPad)){
-		// skip.  Not going to try to tinker with older iOS SDPs
+		return description; // skip.  Not going to try to tinker with older iOS SDPs
 	} else if ((session.stereo==3) || (session.stereo==5) || (session.stereo==6) || (session.stereo==1)){ // stereo out
-		configs = {
-			'stereo': 1,
-			'useinbandfec': session.noFEC ? 0 : 1,
-			'maxptime': session.maxptime,
-			'minptime': session.minptime,
-			'ptime': session.ptime,
-			'dtx': session.dtx  // "usedtx", if no loud audio, stops sending audio for 400ms. default.
-		};
+		configs = {'stereo': 1}
 		log("stereo enabled");
 	} else if (iOS || iPad){ // iOS doesn't have multichannel, so why even bother
-		configs = {
-			'useinbandfec': session.noFEC ? 0 : 1,
-			'maxptime': session.maxptime,
-			'minptime': session.minptime,
-			'ptime': session.ptime,
-			'dtx': session.dtx  // "usedtx", if no loud audio, stops sending audio for 400ms. default.
-		};
-		
+		configs = {};
 	} else if (session.stereo==4){
-		configs = {
-			'stereo': 2,
-			'useinbandfec': session.noFEC ? 0 : 1,
-			'maxptime': session.maxptime,
-			'minptime': session.minptime,
-			'ptime': session.ptime,
-			'dtx': session.dtx  // "usedtx", if no loud audio, stops sending audio for 400ms. default.
-		};
+		configs = {'stereo': 2}
 		log("stereo enabled");
 	} else {
-		configs = {
-			'stereo': 0,
-			'useinbandfec': session.noFEC ? 0 : 1,
-			'maxptime': session.maxptime,
-			'minptime': session.minptime,
-			'ptime': session.ptime,
-			'dtx': session.dtx  // "usedtx", if no loud audio, stops sending audio for 400ms. default.
-		};
+		configs = {'stereo': 0};
+	}
+	
+	if (session.noFEC!==null){
+		configs.useinbandfec = session.noFEC ? 0 : 1;
+	}
+	if (session.maxptime!==false){
+		configs.maxptime = session.maxptime;
+	}
+	if (session.minptime!==false){
+		configs.minptime = session.minptime;
+	}
+	if (session.ptime!==false){
+		configs.ptime = session.ptime;
+	}
+	if (session.dtx!==false){
+		configs.dtx = session.dtx;  // "usedtx", if no loud audio, stops sending audio for 400ms. default.
 	}
 	
 	if (session.whipOutAudioBitrate){
-		if (!configs){
-			configs = {
-				'maxaveragebitrate': session.whipOutAudioBitrate  * 1024, 
-				'cbr': session.cbr
-			};
-		} else{
-			configs.maxaveragebitrate = session.whipOutAudioBitrate  * 1024;
-			configs.cbr = session.cbr;
-		}
+		configs.maxaveragebitrate = session.whipOutAudioBitrate  * 1024;
+		configs.cbr = session.cbr;
 	}
 	
-	if (configs){
+	if (Object.keys(configs).length){
 		log("Processing sdp of type: "+description.type+ " ...");
+		log(configs);
 		description.sdp = CodecsHandler.setOpusAttributes(description.sdp, configs, true);
 	}
 	
@@ -38913,19 +39730,8 @@ function configureWhipOutSDP(description){ // THIS IS FOR WHIP-OUTPUT; it has
 			}, session.whipOutCodec);
 		}
 	}  else {
-		if (iOS || iPad){
-			jsep.sdp = jsep.sdp.replace(/42e01f/gi,"42e01f");  // openH264
-			jsep.sdp = jsep.sdp.replace(/42001f/gi,"42e01f");  // external encoder
-			jsep.sdp = jsep.sdp.replace(/420029/gi,"42e01f"); // external encoder
-			jsep.sdp = jsep.sdp.replace(/42a01e/gi,"42e01f"); // external encoder
-			jsep.sdp = jsep.sdp.replace(/42a014/gi,"42e01f"); // external encoder
-			jsep.sdp = jsep.sdp.replace(/42a00b/gi,"42e01f");  // external encoder
-			jsep.sdp = jsep.sdp.replace(/640c1f/gi,"42e01f"); // will not work
-		} else {
-			description.sdp = CodecsHandler.preferCodec(description.sdp,"h264", session.videoErrorCorrection); // default
-			description.sdp = description.sdp.replace(/42001f/gi,"42e01f"); // openh264 set as default.
-			description.sdp = description.sdp.replace(/420029/gi,"42e01f"); 
-		}
+		log("preferring h264 in sdp");
+		description.sdp = CodecsHandler.preferCodec(description.sdp,"h264", session.videoErrorCorrection); // h264 default. openh264? well, this was breaking with Pion, so, meh. whatever h264
 		if (session.whipOutVideoBitrate){
 			description.sdp  = CodecsHandler.setVideoBitrates(description.sdp , {
 				min: parseInt(session.whipOutVideoBitrate/10) || 1,
@@ -38978,6 +39784,31 @@ const scalabilityModes = [
 	'L3T3_KEY'
 ];
 		
+function completeLocationURL(originalURL, locationURL) {
+  if (!originalURL){
+	  return locationURL;
+  } else if (!locationURL){
+	  return originalURL;
+  }
+  const parsedOriginalURL = new URL(originalURL);
+
+  // Check if the location URL is already absolute
+  if (locationURL.startsWith('http://') || locationURL.startsWith('https://')) {
+    return locationURL;
+  } else {
+    // Check if the original URL's pathname ends with a slash or not
+    let basePath = parsedOriginalURL.origin + parsedOriginalURL.pathname;
+    if (!basePath.endsWith('/')) {
+      // If the pathname does not end with a slash, remove the last segment
+      basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
+    }
+
+    // Resolve "." and ".." in the relative URL against the base path
+    const fullPath = new URL(locationURL, basePath).href;
+
+    return fullPath;
+  }
+}
 
 function whipOut(){
 	log("whipOut");
@@ -38996,7 +39827,11 @@ function whipOut(){
 				session.configuration.encodedInsertableStreams = true; 
 			}
 			
+			if (session.bundlePolicy){
+				session.configuration.bundlePolicy = session.bundlePolicy;
+			}
 			var config = {...session.configuration};
+			log(config);
 			
 			// do anything whip specific here
 			
@@ -39189,7 +40024,6 @@ function whipOut(){
 		try {
 			session.whipOut.createOffer().then(function(description){
 				
-				
 				try {
 					description = configureWhipOutSDP(description);
 				} catch(e){
@@ -39257,6 +40091,17 @@ function whipOut(){
 					session.whipOut.stats.whep_URL = false
 					session.whipOut.stats.watch_URL = false; // cloudflare and meshcast have this, but meh. aec is an issue, so won't bother for now.
 					var WHELPlaybackURL = false; // we will try to determine the WHEP address, if we need to share it with other viewers.
+					
+					try {
+						if (this.getAllResponseHeaders().indexOf("location") >= 0) {
+							session.whipOut.location = this.getResponseHeader('location') || "";
+							session.whipOut.location = completeLocationURL(session.whipOutput, session.whipOut.location);
+						} else if (!session.whipOut.location && session.whipOutput){
+							session.whipOut.location = session.whipOutput;
+							session.whipOut.location = completeLocationURL(session.whipOutput, session.whipOut.location);
+						}
+					} catch(e){errorlog(e);}
+					
 					try {
 						log(this.getAllResponseHeaders());
 						if (this.getAllResponseHeaders().indexOf("whep") >= 0) {
@@ -39270,6 +40115,15 @@ function whipOut(){
 								WHELPlaybackURL = "https://"+targetDomain[2]+"/"+targetDomain[3].slice(33,65)+"/webRTC/play";
 								session.whipOut.stats.whipHost = "Cloudflare";
 							}
+						} else if (WHELPlaybackURL && (!(WHELPlaybackURL.startsWith("http://") || WHELPlaybackURL.startsWith("https://")))){
+							var targetDomain = session.whipOutput.split("/");
+							if (targetDomain.length>2){
+								if (WHELPlaybackURL.startsWith("/")){
+									WHELPlaybackURL = targetDomain[0]+"//"+targetDomain[2]+WHELPlaybackURL;
+								} else {
+									WHELPlaybackURL = targetDomain[0]+"//"+targetDomain[2]+"/"+WHELPlaybackURL;
+								}
+							}
 						}
 						log("WHELPlaybackURL: "+WHELPlaybackURL);
 						session.whipOut.stats.whep_URL = WHELPlaybackURL
@@ -39277,7 +40131,12 @@ function whipOut(){
 					} catch(e){errorlog(e);}
 					
 					if (WHELPlaybackURL){
-						session.whipoutSettings = {type:"whep", "url": WHELPlaybackURL};
+						if (WHELPlaybackURL.includes("|")){
+							var tmp = WHELPlaybackURL.split("|");
+							session.whipoutSettings = {type:"whep", "url": tmp[0].trim(), "token":tmp[1].trim()};
+						} else {
+							session.whipoutSettings = {type:"whep", "url": WHELPlaybackURL};
+						}
 					}
 					
 					if (contentType.startsWith("application/sdp") || isSDP(this.responseText)){
@@ -39286,13 +40145,37 @@ function whipOut(){
 						jsep.type = "answer";
 						
 						try {
-							jsep = configureWhipOutSDP(jsep);
+							jsep = configureWhipOutSDP(jsep); 
 						} catch(e){
 							errorlog(e);
 						}
 						
 						warnlog("Processing answer:");
 						warnlog(jsep);
+						
+						
+						
+						if (session.whipOut && session.whipOut.location){
+							
+							sessionStorage.setItem('deleteWhipOnLoad', JSON.stringify({location:session.whipOut.location, whipOutputToken:session.whipOutputToken}));
+							
+							session.whipOut.deleteme = function(){
+								let xhttp = new XMLHttpRequest();
+								if (session.whipOutputToken){ 
+									xhttp.setRequestHeader('Authorization', 'Bearer ' + session.whipOutputToken);
+								}
+								xhttp.onload = function() {
+									sessionStorage.removeItem('deleteWhipOnLoad');
+								}
+								xhttp.onerror = function() {
+									sessionStorage.removeItem('deleteWhipOnLoad');
+								}
+								xhttp.open("DELETE", session.whipOut.location, true);
+								xhttp.send();
+								
+								delete session.whipOut.deleteme;
+							}
+						}
 						
 						if (session.localNetworkOnly){
 							jsep.sdp = filterSDPLAN(jsep.sdp)
@@ -39357,7 +40240,6 @@ function whipOut(){
 							
 							}
 						});
-						
 					} else if (contentType == "application/error"){
 						if (this.responseText==432){
 							warnUser("Whip out error: 432");
@@ -40033,7 +40915,12 @@ async function whepIn(whepInput=false, whepInputToken=false, UUID=false){ // PLA
 						}
 					} else { // vdo.ninja itself is secure
 						if (location.protocol === 'https:') {
-							warnUser("WHEP playback failed.\n\nThe WHEP URL needs to be using https if from an SSL-enabled websites.");
+							if (location.hostname == "vdo.ninja"){
+								warnUser("WHEP playback failed.\n\nThe WHEP URL needs to be using https if from an SSL-enabled website.\n\nPerhaps try using <a href='http://insecure.vdo.ninja"+location.pathname
++location.search+"'>http://insecure.vdo.ninja<a> instead.", false, false);
+							} else {
+								warnUser("WHEP playback failed.\n\nThe WHEP URL needs to be using https if from an SSL-enabled website.");
+							}
 						} else if (("isSecureContext" in window) && (window.isSecureContext===false)){
 							warnUser("WHEP playback failed.\n\nThe website may have assets loaded in a secure context.");
 						} else {
@@ -40687,7 +41574,45 @@ function setupCommands(){
 	}; 
 	commands.highlight = function(value=null,value2=null){
 		return commands.soloVideo(value, value2);
-	}; 
+	};
+	
+	
+	commands.setBufferDelay = function(value=null, value2=null){
+		let delay = parseInt(value) || 0;
+		
+		if (!value2){
+			session.buffer = delay;
+		} else if (value2 === "*"){
+			for (var uuid in session.rpcs){
+				session.rpcs[uuid].buffer = delay;
+				playoutdelay(uuid);
+				document.querySelectorAll('#bufferSettings[data--u-u-i-d="'+uuid+'"] input[data-buffer-value]').forEach(ele=>{
+					ele.value = delay;
+				});
+				return true;
+			}
+		} else if (value2 in session.rpcs){
+			session.rpcs[value2].buffer = delay;
+			playoutdelay(value2);
+			document.querySelectorAll('#bufferSettings[data--u-u-i-d="'+value2+'"] input[data-buffer-value]').forEach(ele=>{
+				ele.value = delay;
+			});
+			return true;
+		} else if (value2){
+			let UUID = Object.keys(session.rpcs).find(uuid => session.rpcs[uuid].streamID === value2);
+			if (session.rpcs[UUID]){
+				session.rpcs[UUID].buffer = delay;
+				playoutdelay(UUID);
+				document.querySelectorAll('#bufferSettings[data--u-u-i-d="'+UUID+'"] input[data-buffer-value]').forEach(ele=>{
+					ele.value = delay;
+				});
+				return true;
+			} else {
+				errorlog("The stream ID specified does not exist: "+value2);
+			}
+		}
+		return false;
+	};
 	
 	commands.layout = function(value=null,value2=null){
 		try {
