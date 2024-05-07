@@ -5,4 +5,4 @@ In most cases, all video data is transferred directly from peer to peer, without
 
 Loop Cam is designed to allow content creators to produce real-time live shows using remote media streams. It can also turn smartphones into wireless webcams, with additional Virtualcam software. 
 
-Loop Cam is powered by a little green bear.
+Loop Cam is powered by a little green bear. Tee hee.
