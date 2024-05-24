@@ -54,7 +54,7 @@
 		<meta property="twitter:image" content="./media/loop_full_thumb.png" />
 		<meta name="msapplication-TileColor" content="#da532c" />
 		<meta name="theme-color" content="#0f131d" />
-		<link rel="stylesheet" href="./main.css?ver=379" />
+		<link rel="stylesheet" href="./main.css?ver=386" />
 		<script type="text/javascript" crossorigin="anonymous" src="./thirdparty/adapter.js"></script>
 		<style id="lightbox-animations" type="text/css"></style>
 		
@@ -78,7 +78,7 @@
 		-->
 	</head>
 	<body id="main" class="main hidden" onload="main()">
-		<span itemprop="image" itemscope itemtype="image/png">
+		<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">
 			<link itemprop="url" href="./media/loop_full_thumb.png" />
 		</span>
 		<link itemprop="thumbnailUrl" href="./media/loop_full_thumb.png" />
@@ -88,7 +88,7 @@
 		
 		<script type="text/javascript" crossorigin="anonymous"  src="./thirdparty/CodecsHandler.js?ver=10"></script>
 		<script type="text/javascript" crossorigin="anonymous" src="./thirdparty/aes.js"></script>
-		<script type="text/javascript" crossorigin="anonymous" src="./webrtc.js?ver=781"></script>
+		<script type="text/javascript" crossorigin="anonymous" src="./webrtc.js?ver=783"></script>
 		<input id="zoomSlider" type="range" style="display: none;" />
 		<span id="electronDragZone" style="pointer-events: none; z-index:-10; position:absolute;top:0;left:0;width:100%;height:2%;-webkit-app-region: drag;min-height:20px;"></span>
 		<div id="header">
@@ -322,88 +322,84 @@
 						<br />
 						<span data-translate="rooms-allow-for">Rooms allow for group-chat and the tools to manage multiple guests.</span>
 						<br />
-						<br />
-						
-						<table >
-						 <tr>
-							<th style="text-align:right;" class="labelLarge">
-								<b>
-								<span data-translate="room-name">Room Name</span>: 
-								</b>
-							</th>
-							<th class="labelSmall"></th>
-							<th style="text-align:left;" >
-								<div class="labelSmall">
+						<span class="section">
+							<table style="padding-bottom:0;margin-bottom:0;">
+							 <tr>
+								<th style="text-align:right;" class="labelLarge">
 									<b>
-										<span data-translate="room-name">Room Name</span>: 
+									<span data-translate="room-name">Room Name</span>: 
 									</b>
-								</div>
-								<input type="text" autocorrect="off" autocapitalize="none"  id="videoname1" placeholder="Enter a room name here" onkeydown="checkStrengthRoom(event, 'securityLevelRoom');" onchange="checkStrengthRoom(event, 'securityLevelRoom');" onkeyup="enterPressed(event, createRoom);" maxlength="30" style="max-width: 431px;width: 100%;font-size: 110%; padding: 5px;" />
-								<button ontouchstart="getById('videoname1').value = session.generateRandomString();getById('securityLevelRoom').style.display='none';" onmousedown="getById('videoname1').value = session.generateRandomString();getById('securityLevelRoom').style.display='none';" title="Generate a random room name" class="randomRoomName"><i class="las la-random"></i></button>
-								<div id="securityLevelRoom" style="display:none;margin-top:3px;position:relative;top:3px;font-size:0.8em;"></div>
-							</th>
-							
-						</tr><tr>
-						
-							<th style="text-align:right;" class="labelLarge">
-								<b>
-									<span data-translate="password-input-field">Password</span>: 
-								</b>
-							</th>
-							<th class="labelSmall"></th>
-							<th  style="text-align:left;">
-								<div class="labelSmall">
+								</th>
+								<th class="labelSmall"></th>
+								<th style="text-align:left;" >
+									<div class="labelSmall">
+										<b>
+											<span data-translate="room-name">Room Name</span>: 
+										</b>
+									</div>
+									<input type="text" autocorrect="off" autocapitalize="none"  id="videoname1" placeholder="Enter a room name here" onkeydown="checkStrengthRoom(event, 'securityLevelRoom');" onchange="checkStrengthRoom(event, 'securityLevelRoom');" onkeyup="enterPressed(event, createRoom);" maxlength="30" style="max-width: 431px;width: 100%;font-size: 110%; padding: 5px;" />
+									<button ontouchstart="getById('videoname1').value = session.generateRandomString();getById('securityLevelRoom').style.display='none';" onmousedown="getById('videoname1').value = session.generateRandomString();getById('securityLevelRoom').style.display='none';" title="Generate a random room name" class="randomRoomName"><i class="las la-random"></i></button>
+									<div id="securityLevelRoom" style="display:none;margin-top:3px;position:relative;top:3px;font-size:0.8em;"></div>
+								</th>
+							</tr>
+							<tr>
+								<th style="text-align:right;" class="labelLarge">
 									<b>
 										<span data-translate="password-input-field">Password</span>: 
 									</b>
-								</div>
-								<input type="text" autocorrect="off" autocapitalize="none" id="passwordRoom" placeholder="Optional room password here" onkeydown="checkStrengthRoom(event, 'securityLevelRoom');" onchange="checkStrengthRoom(event, 'securityLevelRoom');"  onkeyup="enterPressed(event, createRoom);" style="max-width: 431px;width: 100%;font-size: 110%; padding: 5px;" />
-							</th>
-						
-						</tr><tr >
-						
-							<th style="text-align:right; padding: 5px; padding-top: 20px;">
-								<input id="broadcastFlag" type="checkbox" title="For large group rooms, this option can reduce the load on remote guests substantially" />
-							</th><th style="text-align:left;; padding-top: 20px;">
-							<b>
-								<span data-translate="guests-only-see-director"  style="cursor: help;" title="For large group rooms, this option can reduce the load on remote guests substantially" >The guests can see the director, but not other guests' videos</span>
-							</b>
-							</th>	
-						</tr><tr>
-						
-							<th style="text-align:right; padding: 5px;; padding-bottom: 20px;">
-								<input id="showdirectorFlag" type="checkbox" title="The director will be visible in scenes as if a performer themselves." />
-							</th><th style="text-align:left;; padding-bottom: 20px;">
-							<b>
-								<span data-translate="scenes-can-see-director" style="cursor: help;" title="If checked, the director can be added to scenes as if a guest. Otherwise, the director will never appear in a scene." >The director will be performing as well, appearing in group scenes</span>
-							</b>
-							</th>	
-						</tr><tr>
-							<th style="text-align:right; padding: 5px;">
-								
-							</th>
-							<th style="text-align:left;">
-								<b>
-									<span data-translate="default-codec-select" title="Which video codec would you want used by default?" >Preferred Video Codec:  </span> 
-									<select style="font-size:1.1em" id="codecGroupFlag" type="checkbox" title="For large group rooms, this option can reduce the load on remote guests substantially" >
-										<option value="default" selected>Default</option>
-										<option value="vp9">VP9</option>
-										<option value="h264">H264</option>
-										<option value="vp8">VP8</option>
-										<option value="av1">AV1</option>
-									</select >
-								</b>
-							</th>
+								</th>
+								<th class="labelSmall"></th>
+								<th  style="text-align:left;">
+									<div class="labelSmall">
+										<b>
+											<span data-translate="password-input-field">Password</span>: 
+										</b>
+									</div>
+									<input type="text" autocorrect="off" autocapitalize="none" id="passwordRoom" placeholder="Optional room password here" onkeydown="checkStrengthRoom(event, 'securityLevelRoom');" onchange="checkStrengthRoom(event, 'securityLevelRoom');"  onkeyup="enterPressed(event, createRoom);" style="max-width: 431px;width: 100%;font-size: 110%; padding: 5px;" />
+								</th>
+							</tr>
+							<tr >
 							
-						</tr>
-						</table>
-						
-						<span style="margin: 0 auto; width: 470px; max-width:100%;display: block;">
-							<button onclick="createRoom()"  class="gobutton gowebcam" style="width:100%;" alt="Enter the room as the group's director" title="You'll enter as the room's director">
+								<th style="text-align:right; padding: 5px; padding-top: 20px;">
+									<input id="broadcastFlag" type="checkbox" title="For large group rooms, this option can reduce the load on remote guests substantially" />
+								</th><th style="text-align:left;; padding-top: 20px;">
+								<b>
+									<span data-translate="guests-only-see-director"  style="cursor: help;" title="For large group rooms, this option can reduce the load on remote guests substantially" >The guests can see the director, but not other guests' videos</span>
+								</b>
+								</th>	
+							</tr>
+							<tr>
+							
+								<th style="text-align:right; padding: 5px;; padding-bottom: 20px;">
+									<input id="showdirectorFlag" type="checkbox" title="The director will be visible in scenes as if a performer themselves." />
+								</th><th style="text-align:left;; padding-bottom: 20px;">
+								<b>
+									<span data-translate="scenes-can-see-director" style="cursor: help;" title="If checked, the director can be added to scenes as if a guest. Otherwise, the director will never appear in a scene." >The director will be performing as well, appearing in group scenes</span>
+								</b>
+								</th>	
+							</tr>
+							<tr>
+								<th style="text-align:right; padding: 5px;">
+									
+								</th>
+								<th style="text-align:left;">
+									<b>
+										<span data-translate="default-codec-select" title="Which video codec would you want used by default?" >Preferred Video Codec:  </span> 
+										<select style="font-size:1.1em" id="codecGroupFlag" type="checkbox" title="For large group rooms, this option can reduce the load on remote guests substantially" >
+											<option value="default" selected>Default</option>
+											<option value="vp9">VP9</option>
+											<option value="h264">H264</option>
+											<option value="vp8">VP8</option>
+											<option value="av1">AV1</option>
+										</select >
+									</b>
+								</th>
+							</tr>
+							</table>
+							<button onclick="createRoom()"  class="gobutton gowebcam" style="width: 470px;display: block;margin: 20px auto;" alt="Enter the room as the group's director" title="You'll enter as the room's director">
 								<span data-translate="enter-the-rooms-control">Enter the room's Control Center in the director's role</span>
 							</button>
-							<br />
-							<button class="roomnotes" style="display: block;" onclick="toggle(document.getElementById('roomnotes'),this);">
+							<button class="roomnotes" style="display: block;display: block;margin: auto;" onclick="toggle(document.getElementById('roomnotes'),this);">
 								<span data-translate="show-tips">Show me some tips..</span>
 							</button>
 							
@@ -417,12 +413,16 @@
 									<li><a href="https://params.vdo.ninja" style="color:black;"><u>Advanced URL parameters</u></a> are available to customize rooms.</li>
 								</span>
 							</ul>
-							<br />
-							<br />
+						</span>
+						
+						<span class="section hidden" id="lastSavedRoom">
+							<label>A previous session was found using room: <b id="lastSavedRoomName">*UNDEFINED*</b></label>
+							<button id="goToLastSavedRoom" style="width: 470px;display: block;margin:5px auto;" class="gobutton gowebcam" alt="Enter the room with the previous room settings" title="Enter director room with previous settings">Load the previous session</button>
+						</span>
+						
+						<span class="section">
 							<i data-translate="looking-to-just-chat-and-not-direct">Looking to just chat and not direct?</i>
-							<br />
-							<br />
-                            <button onclick="jumptoroom2()" class="gobutton gowebcam" style="width:100%;" alt="Enter the room as the group's director" title="You'll enter as the room's director">
+							<button onclick="jumptoroom2()" class="gobutton gowebcam" style="width: 470px;display: block;margin: 5px auto" alt="Enter the room as the group's director" title="You'll enter as the room's director">
 								<span data-translate="join-the-room-basic">Join the room as a Participant, rather than a director</span>
 							</button>
 						</span>
@@ -569,13 +569,14 @@
 							<i class="las la-robot"></i><span data-translate="select-digital-effect"> Digital Video Effects </span>
 						</div>
 						<select id="effectSelector" alt="Digital video effect options"  onchange="effectsDynamicallyUpdate(event, this);">
-							<option value="0" data-translate="no-effects-applied">No effects applied</option>	track.getCapabilities().backgroundBlur
+							<option value="0" data-translate="no-effects-applied">No effects applied</option>
 							<option value="3" data-translate="blurred-background">Blurred background</option>
 							<option value="13" class="hidden" disabled data-translate="blurred-background-2">Blurred background 2 🧪</option>
 							<option value="4" data-translate="digital-greenscreen">Digital greenscreen</option>	
 							<option value="5" data-translate="virtual-background">Virtual background</option>
 							<option value="6" data-translate="face-mesh" title="experimental">Face mesh (slow load) 👨‍🔬</option>
 							<option value="7" data-translate="digital-zoom">Digital zoom</option>
+							<option value="overlay" data-translate="overlay-image">Overlay image</option>
 							<option value="anon" data-translate="anonymous-mask" title="experimental">Anonymous mask 👨‍🔬</option>
 							<option value="dog" data-translate="dog-face" title="experimental">Dog ears and nose 👨‍🔬</option>
 							<option value="1" disabled title='Enable the Chrome experimental features flag to use: chrome://flags/#enable-experimental-web-platform-features' class='facetracker' data-translate="face-tracker">Face Tracker</option>
@@ -588,6 +589,9 @@
 						</span>
 						
 						<div id="selectImageTFLITE" style="display:none;margin-top:10px;">
+							
+						</div>
+						<div id="selectImageOverlay" style="display:none;margin-top:10px;">
 							
 						</div>
 						<div id="selectEffectAmount" style="display:none;margin-top:10px;">
@@ -1253,7 +1257,7 @@
 							<i class="las la-compact-disc"></i>
 							<span data-translate="record-remote"> Record Remote</span>
 						</button>
-						<button data-action-type="recorder-google-drive-remote" title="The Remote Guest will record their local stream to their local drive. *experimental*" onclick="requestGoogleDriveRecord(this)">
+						<button data-action-type="recorder-google-drive-remote" title="The Remote Guest will record their local stream and upload it to your Google Drive. *experimental*" onclick="requestGoogleDriveRecord(this)">
 							<i class="las la-compact-disc"></i>
 							<span data-translate="google-drive-record"> Google Drive</span>
 						</button>
@@ -1269,12 +1273,17 @@
 							<i class="las la-file-upload"></i>
 							<span data-translate="request-upload"> Request File</span>
 						</button>
-						<button  class="mainonly advanced" data-action-type="mirror-guest"  title="Mirror the video of this guest globally" onclick="requestMirrorGuest(this)">
-							<i class="las la-file-upload"></i>
-							<span data-translate="mirror-guest"> Mirror Video</span>
-						</button>
+						
 						<button class="mainonly advanced" data-action-type="force-keyframe" title="Force the remote sender to issue a keyframe to all scenes, fixing Pixel Smearing issues." onclick="requestKeyframeScene(this);">
 							<span data-translate="force-keyframe"> Rainbow Puke Fix</span>
+						</button>
+						<button  class="mainonly advanced" data-action-type="mirror-guest"  title="Mirror the video of this guest globally" onclick="requestMirrorGuest(this)">
+							🪞
+							<span data-translate="mirror-guest"> Mirror Video</span>
+						</button>
+						<button  class="mainonly advanced" data-action-type="rotate-guest"  title="Rotate the video of this guest globally" onclick="requestRotateGuest(this);">
+							🔃
+							<span data-translate="rotate-guest"> Rotate Video</span>
 						</button>
 					</div>
 					
@@ -1362,7 +1371,7 @@
 						<span data-translate="add-to-scene">add to scene 1</span>
 					</button>
 				</div>
-
+				
 				
 				<!-- Row of Scenes -->
 				<div class="row six advanced">
@@ -1386,7 +1395,29 @@
 						<span>S7</span>
 					</button>
 				</div>
-
+				
+				<div class="group advanced" data-cluster="1">
+					<button data-action-type="stats-remote" title="Request the statistics of this video in any active scene" onclick="toggleSceneStats(this);">
+						<i class="las la-info-circle"></i>
+						<span data-translate="stats-remote">Scene Stats</span>
+					</button>
+					
+					<!-- Graph Section for Scenes -->
+					<div class="row two advanced">
+						<span class="graphSection hidden" data-action-type="stats-graphs-bitrate" >
+							<span class="hidden" data-message="true" data-no-scenes="true">No scenes active</span>
+						</span>
+						<span class="graphSection hidden" data-action-type="stats-graphs-details" >
+							<span class="hidden" data-no-scenes="true"></span>
+							<span data-action-type="stats-graphs-details-container" class="hidden">
+								<span class="hidden" data-scene-name="true">scene</span>
+								<span class="hidden" data-bitrate="true">bitrate (kbps)</span>
+								<span class="hidden" data-resolution="true">resolution</span>
+								<span class="hidden" style="word-break: break-all;" data-video-codec="true">video codec</span>
+							</span>
+						</span>
+					</div>
+				</div>
 				<!-- Row of Groups -->
 				<div class="row six advanced">
 					<button class="btn-HL-green" data-action-type="toggle-group" data-group="1" title="Add/remove from group 1" onclick="changeGroupDirector(this);">
@@ -1533,6 +1564,7 @@
 						<option value="5" data-translate="virtual-background">Virtual background</option>
 						<option value="6" data-translate="face-mesh" title="experimental">Face mesh (slow load) 👨‍🔬</option>
 						<option value="7" data-translate="digital-zoom">Digital zoom</option>
+						<option value="overlay" data-translate="overlay-image">Overlay image</option>
 						<option value="anon" data-translate="anonymous-mask" title="experimental">Anonymous mask 👨‍🔬</option>
 						<option value="dog" data-translate="dog-face" title="experimental">Dog ears and nose 👨‍🔬</option>
 						<option value="1" disabled title='Face Detection API not detected; you may be able to enable it here: chrome://flags/#enable-experimental-web-platform-features' class='facetracker' data-translate="face-tracker">Face tracker</option>
@@ -1541,6 +1573,9 @@
 						<i class="las la-info-circle"></i>
 					</span>
 					<div id="selectImageTFLITE3" style="display:none;margin-top:10px;">
+						
+					</div>
+					<div id="selectImageOverlay3" style="display:none;margin-top:10px;">
 						
 					</div>
 					<div id="selectEffectAmount3" style="display:none;margin-top:10px;">
@@ -1585,24 +1620,24 @@
 				
 				<span id="popupSelector_user_settings" style="display: none; visibility:hidden">
 					<span class="mobileHide">
-						<label title="Choose a hotkey for Hold-to-Talk. If using Electron Capture, elevate privilleges to have it become global">Hold-to-Talk Hot-key</label>
-						<input type="text" id="pptHotKey"  placeholder="press a key here" style="padding-left: 7px;" onkeypress="event.preventDefault;event.stopPropagation();return false;" onkeyup="event.preventDefault;event.stopPropagation();return false;" onkeydown="setHotKey();"/>
-						<button onclick="setHotKey(false);" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">Clear</button>
+						<label title="Choose a hotkey for Hold-to-Talk. If using Electron Capture, elevate privilleges to have it become global" data-translate="hold-to-talk" >Hold-to-Talk Hot-key</label>
+						<input type="text" id="pptHotKey" placeholder="press a key here" style="padding-left: 7px;" onkeypress="event.preventDefault;event.stopPropagation();return false;" onkeyup="event.preventDefault;event.stopPropagation();return false;" onkeydown="setHotKey();"/>
+						<button onclick="setHotKey(false);" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;" data-translate="clear">Clear</button>
 						<br /><br />
 						<label title="Draw on the Screen">Draw-on-Screen</label>
-						<button id='startDrawScreen' title="CTRL (cmd) + ALT + D to toggle" onclick="drawOnScreen();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">Enable</button>
-						<button class='hidden drawActive' onclick="drawOnScreenObject.erase();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">Clear</button>
-						<button class='hidden drawActive' onclick="drawOnScreenObject.stop();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;" title="CTRL (cmd) + ALT + D to toggle" >Stop</button>
+						<button id='startDrawScreen' title="CTRL (cmd) + ALT + D to toggle" onclick="drawOnScreen();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;" data-translate="enable" >Enable</button>
+						<button class='hidden drawActive' onclick="drawOnScreenObject.erase();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;" data-translate="clear">Clear</button>
+						<button class='hidden drawActive' onclick="drawOnScreenObject.stop();" style="margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;" title="CTRL (cmd) + ALT + D to toggle" data-translate="stop">Stop</button>
 						<button class='hidden drawActive' onclick="drawOnScreenObject.color(this);" data-color='red' style="background-color:red; margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">✏️</button>
 						<button class='hidden drawActive' onclick="drawOnScreenObject.color(this);" data-color='blue' style="background-color:blue; margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">✏️</button>
 						<button class='hidden drawActive' onclick="drawOnScreenObject.color(this);" data-color='green' style="background-color:green; margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">✏️</button>
 						<button class='hidden drawActive' onclick="drawOnScreenObject.color(this);" data-color='black' style="background-color:black; margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">✏️</button>
 						<button class='hidden drawActive' onclick="drawOnScreenObject.color(this);" data-color='white' style="background-color:white; margin: 0 0 0 4px; border-radius: 5px; padding: 3px 3px;">🎨</button>
 						<br /><br />
-						<button class="generalButton" onclick="cycleStyleOptions();" id='toggleWaveformButton' title="Audio-only sources can be stylized in different ways">Cycle between several audio-visualizations styles</button>
+						<button class="generalButton" onclick="cycleStyleOptions();" id='toggleWaveformButton' title="Audio-only sources can be stylized in different ways" data-translate="cycle-between-audio-visualizations">Cycle between several audio-visualizations styles</button>
 						<br />
 					</span>
-					<button class="generalButton" onclick="clearStorage();" title="Clear site's local storage and settings">Clear site's local browser storage and saved settings</button>
+					<button class="generalButton" onclick="clearStorage();" title="Clear site's local storage and settings" data-translate="cleaer-sites-local-storage">Clear site's local browser storage and saved settings</button>
 					
 				</span>
 		</div>
@@ -1630,6 +1665,12 @@
 					<a href="#" class="context-menu__link" data-action="Publish">
 						<i class="las la-tv"></i>
 						<span data-translate="publish-url" >Publish via WHIP</span>
+					</a>
+				</li>
+				<li class="context-menu__item hidden">
+					<a href="#" class="context-menu__link" data-action="RecordWindow">
+						🔴
+						<span data-translate="record-window" >Record as a Window</span>
 					</a>
 				</li>
 				<li class="context-menu__item">
@@ -1966,8 +2007,8 @@
 					</div>
 				</form>
 				<br />
-				<button class="gobutton green" onclick='startPublishing();'>⬆️ Select window and start publishing</button>
-				
+				<button class="gobutton green hidden" id="startPublishingButton" onclick='startPublishing();'>⬆️ Select window and start publishing</button>
+				<button class="gobutton green hidden" id="startRecordingButton" onclick='startRecording();'>🔴 Select window and start recording</button>
 				<br />
 				<br /><br />
 				
@@ -2113,6 +2154,15 @@
 				<input type="file"  accept="image/*" onchange="changeTFLiteImage(event, this)" style="position: fixed; top: -100em; margin-left:10px; border:1px solid #555;"> 
 			</label>
 		</div>
+		<div id="selectImageOverlay_contents" style="display:flex;overflow-x:auto;" class="hidden">
+			<label style="min-width:100px;display:inline-block;margin:0px 1px; text-align:center; cursor:pointer;">
+				<i class="las la-hdd" style="font-size: 3em;"></i><br /><span data-translate="select-local-image">Select Local Image</span>
+				<input type="file"  accept="image/*" onchange="changeOverlayImage(event, this)" style="position: fixed; top: -100em; margin-left:10px; border:1px solid #555;"> 
+			</label>
+			<label style="min-width:100px;display:inline-block;margin:0px 1px; text-align:center; cursor:pointer;" onclick="if (session.foregroundImg){session.foregroundImg.classList.remove('selectedTFImage');session.foregroundImg=null;}">
+				<i class="las la-minus-circle" style="font-size: 3em;"></i><br /><span data-translate="clear-local-image">Clear Image</span>
+			</label>
+		</div>
 		<div id="gridlayout"></div>
 		<audio id="testtone" style="display:none;" preload="none">
 			<source src="./media/tone.mp3" type="audio/mpeg"> 
@@ -2131,23 +2181,23 @@
 			</div>
 		</div>
 		<div id="messagePopup" class="popup-message"></div>
-		<div id="languages" style="right: 20px; bottom: 30px; display:none;" class="popup-message" style="display: none;">
+		<div id="languages" style="right: 20px; bottom: 30px; display:none;" class="popup-message">
 			<b data-translate='available-languages'>Available Languages:</b>
 			<br />
 			<ul id="languagesList" style="list-style-type: none; margin: 0;">
 				<li><a onclick="changeLg('en');toggle(document.getElementById('languages'));" style="cursor: pointer;">English</a></li>
-				<li><a onclick="changeLg('ru');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Moscow">Russian</a></li>
+				<li><a onclick="changeLg('de');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Berlin">German</a></li>
 				<li><a onclick="changeLg('fr');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Paris">French</a></li>
+				<li><a onclick="changeLg('it');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Rome">Italian</a></li>
+				<li><a onclick="changeLg('es');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Madrid">Spanish</a></li>
 				<li><a onclick="changeLg('pt');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Lisbon;">Portuguese (Europe)</a></li>
 				<li><a onclick="changeLg('pt-br');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="America/Araguaina">Portuguese (Brazil)</a></li>
-				<li><a onclick="changeLg('it');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Rome">Italian</a></li>
-				<li><a onclick="changeLg('de');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Berlin">German</a></li>
-				<li><a onclick="changeLg('es');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Madrid">Spanish</a></li>
 				<li><a onclick="changeLg('nl');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Amsterdam">Dutch</a></li>
 				<li><a onclick="changeLg('tr');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Istanbul">Turkish</a></li>
 				<li><a onclick="changeLg('ja');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Asia/Tokyo">Japanese</a></li>
 				<li><a onclick="changeLg('cn');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Asia/China">Chinese (中文)</a></li>
 				<li><a onclick="changeLg('cs');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Prague">Czech</a></li>
+				<li><a onclick="changeLg('ru');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Moscow">Russian</a></li>
 				<li><a onclick="changeLg('uk');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Ukraine">Ukrainian</a></li>
 				<li><a onclick="changeLg('eu');toggle(document.getElementById('languages'));" style="cursor: pointer;" data-tz="Europe/Euskara">Basque</a></li>
 				<li><a onclick="changeLg('pig');toggle(document.getElementById('languages'));" style="cursor: pointer;">Pig Latin</a></li>
@@ -2200,7 +2250,7 @@
 			// if (!window.location.search){document.body.innerHTML = "";} // uncomment this line, if you wish to try it.
 			
 			var session = WebRTC.Media; // session is a required global variable if configuring manually. Run before loading main.js but after webrtc.js.
-			session.version = "25.0";
+			session.version = "25.3";
 			session.streamID = session.generateStreamID(); // randomly generates a streamID for this session. You can set your own programmatically if needed
 			
 			session.defaultPassword = "someEncryptionKey123"; // Change this password if self-deploying for added security/privacy
@@ -2303,6 +2353,7 @@
 			// session.sync // see the docs
 			// session.buffer // int in milliseconds ; see the docs
 			// session.roomid // "yyyy"  -- the room name to use.  alphanumeric.
+			// session.password = null; // null will ask the user for a password
 			// session.scene // the scene name. Scene 0, 1, ... 8, or any custom scene name is supported.  STRING value. Needed to have a clean view link of a guest stream
 			// session.title // "zzzz"   ; sets the title of the browser page.
 			// session.introOnClean = true; // this will load the page with the webcam selection screen if &push or &room is in the URL; no need to use &webcam.
@@ -2321,7 +2372,7 @@
 			// session.decrypted = session.decodeInvite("U2FsdGVkX1+d58DFIHoO3EQZSuX86ch4PqW2ouztnJ0="); // get a code from invite.cam
 			
 		</script>
-		<script type="text/javascript" crossorigin="anonymous" id="lib-js" src="./lib.js?ver=1140"></script>
-		<script type="text/javascript" crossorigin="anonymous" id="main-js" src="./main.js?ver=848"></script>
+		<script type="text/javascript" crossorigin="anonymous" id="lib-js" src="./lib.js?ver=1165"></script>
+		<script type="text/javascript" crossorigin="anonymous" id="main-js" src="./main.js?ver=879"></script>
 	</body>
 </html>
