@@ -105,6 +105,9 @@ async function main() {
 	if (urlParams.has("cleanoutput") || urlParams.has("clean") || urlParams.has("cleanish")) {
 		session.cleanOutput = true;
 	}
+	if (urlParams.has("mutestatus") || urlParams.has("showmutestate") || urlParams.has("showmuted")){
+		session.showMuteState = true;
+	}
 
 	if (urlParams.has("cleanviewer") || urlParams.has("cv")) {
 		session.cleanViewer = true;
@@ -127,12 +130,16 @@ async function main() {
 			let deleteWhip = sessionStorage.getItem("deleteWhipOnLoad");
 			deleteWhip = JSON.parse(deleteWhip);
 			if (deleteWhip.location) {
-				let xhttp = new XMLHttpRequest();
-				if (deleteWhip.whipOutputToken) {
-					xhttp.setRequestHeader("Authorization", "Bearer " + deleteWhip.whipOutputToken);
+				try {
+					let xhttp = new XMLHttpRequest();
+					xhttp.open("DELETE", deleteWhip.location, true);
+					if (deleteWhip.whipOutputToken) {
+						xhttp.setRequestHeader("Authorization", "Bearer " + deleteWhip.whipOutputToken);
+					}
+					xhttp.send();
+				} catch(e){
+					log(e);
 				}
-				xhttp.open("DELETE", deleteWhip.location, true);
-				xhttp.send();
 			}
 			sessionStorage.removeItem("deleteWhipOnLoad");
 		}
@@ -144,6 +151,11 @@ async function main() {
 		session.director = urlParams.get("director") || urlParams.get("dir") || session.roomid || urlParams.get("roomid") || urlParams.get("r") || urlParams.get("room") || filename || true;
 		session.effect = null; // so the director can see the effects after a page refresh
 		getById("avatarDiv3").classList.remove("hidden"); // lets the director see the avatar option
+	}
+	
+	if (urlParams.has("feedbackbutton") || urlParams.has("fb")) {
+		getById("unmuteSelf").classList.remove("hidden"); // lets the director see the avatar option
+		session.selfVolume = urlParams.get("fb") || null;
 	}
 
 	if (urlParams.has("controls") || urlParams.has("videocontrols")) {
@@ -401,7 +413,7 @@ async function main() {
 
 	if (urlParams.has("background") || urlParams.has("appbg")) {
 		// URL or data:base64 image.  Use &chroma if you want to use a color instead of image.
-		let background = urlParams.get("background") || urlParams.get("appbg") || false;
+		let background = urlParams.get("background") || urlParams.get("appbg") || "./media/logo_cropped.png";
 		if (background) {
 			try {
 				background = decodeURIComponent(background);
@@ -439,6 +451,48 @@ async function main() {
 			}, 1000);
 		}
 	}
+	
+	if (urlParams.has("noaudiowhipin")){
+		session.forceNoAudioWhipIn = true;
+	}
+	if (urlParams.has("novideowhipin")){
+		session.forceNoVideoWhipIn = true;
+	}
+	
+	if (urlParams.has("autoreload")){
+		let refreshInterval = parseInt(urlParams.get("autoreload")) || 60;
+		if (refreshInterval){
+			refreshInterval = refreshInterval*60*1000; // minutes to milliseconds
+			setInterval(function(){
+				session.hangup(true)
+			}, refreshInterval);
+		}
+	}
+	
+	if (urlParams.has("autoreload24")) {
+		let reloadTime = urlParams.get("autoreload24");
+		
+		// Parse the reload time
+		let [hours, minutes] = reloadTime.split(':').map(Number);
+		
+		if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+			let now = new Date();
+			let reloadDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+			
+			// If the reload time has already passed today, schedule for tomorrow
+			if (reloadDate <= now) {
+				reloadDate.setDate(reloadDate.getDate() + 1);
+			}
+			
+			let timeUntilReload = reloadDate.getTime() - now.getTime();
+			
+			setTimeout(function() {
+				session.hangup(true);
+			}, timeUntilReload);
+		} else {
+			console.error("Invalid reload time format. Please use HH:MM in 24-hour format.");
+		}
+	}
 
 	if (urlParams.has("cftoken") || urlParams.has("cft")) {
 		session.whipOutput = urlParams.get("cftoken") || urlParams.get("cft") || false;
@@ -450,15 +504,30 @@ async function main() {
 		}
 	}
 
-	if (urlParams.has("whepwait") || urlParams.has("whepicewait") || urlParams.has("whipwait") || urlParams.has("whipicewait")) {
+	if (urlParams.has("whepwait") || urlParams.has("whepicewait")) {
 		// I'm going to use this for all whip/whep for the time being.
-		session.whepWait = urlParams.get("whepwait") || urlParams.get("whepicewait") || urlParams.get("whipwait") || urlParams.get("whipicewait") || 2000; // how long we wait for ice candidates to collect; ms. whep out and whep in
+		session.whepWait = urlParams.get("whepwait") || urlParams.get("whepicewait") || 2000; // how long we wait for ice candidates to collect; ms. whep out and whep in
 		session.whepWait = parseInt(session.whepWait);
 		if (session.whepWait < 0) {
 			session.whepWait = 0;
 		}
 	}
-
+	
+	if (urlParams.has("whipwait") || urlParams.has("whipicewait")) {
+		// I'm going to use this for all whip/whep for the time being.
+		session.whipWait = urlParams.get("whipwait") || urlParams.get("whipicewait") || 2000; // how long we wait for ice candidates to collect; ms. whep out and whep in
+		session.whipWait = parseInt(session.whipWait);
+		if (session.whipWait < 0) {
+			session.whipWait = 0;
+		}
+	} else {
+		session.whipWait = 2000; // REMOVE after october 2024.
+	}
+	
+	if (urlParams.has("whipme")){ // WIP
+		getById("container-18").classList.remove("hidden");
+	}
+	
 	if (urlParams.has("whippush") || urlParams.has("whipout") || urlParams.has("pushwhip")) {
 		// URL or data:base64 image. Becomes local to this viewer only.  This is like &avatar, but slightly different. Just CSS in this case
 		session.whipOutput = urlParams.get("whippush") || urlParams.get("whipout") || urlParams.get("pushwhip") || null;
@@ -491,6 +560,15 @@ async function main() {
 		
 		getById("startPublishingButton").classList.remove("hidden");
 	}
+	
+	if (urlParams.has("whipoutkeyframe") ){
+		session.whipOutKeyframe = parseInt(urlParams.get("whipoutkeyframe")) || 0;
+	}
+	
+	if (urlParams.has("whipoutkeyframenewviewer") ){
+		session.whipOutKeyframeOnNewViewer = true;
+	}
+	
 
 	if (urlParams.has("svc") || urlParams.has("scalabilitymode")) {
 		// Experiment with this feature here: https://webrtc.github.io/samples/src/content/extensions/svc/
@@ -530,7 +608,7 @@ async function main() {
 			}
 		}
 	}
-
+	
 	if (urlParams.has("nomouseevents") || urlParams.has("nme")) {
 		session.disableMouseEvents = true;
 	}
@@ -735,6 +813,14 @@ async function main() {
 	if (urlParams.has("chunkcast")) {
 		session.chunkcast = true;
 	}
+	
+	if (urlParams.has("drawing")) {
+		session.allowDrawing = urlParams.get("drawing") || true;
+	}
+	
+	if (urlParams.has("nohistory")) {
+		session.nohistory = true;
+	}
 	//if (urlParams.has('callin')){
 	// awaitInboundCall()();
 	//}
@@ -783,7 +869,9 @@ async function main() {
 						tmpHref = tmpHref + "/?" + filename;
 						filename = false;
 						//warnUser("Please ensure your URL is correctly formatted.");
-						window.history.pushState({ path: tmpHref.toString() }, "", tmpHref.toString());
+						if (!session.nohistory){
+							window.history.pushState({ path: tmpHref.toString() }, "", tmpHref.toString());
+						}
 					}
 				} else {
 					filename = filename2.split("&")[0];
@@ -873,16 +961,19 @@ async function main() {
 
 	if (urlParams.has("bitratecutoff") || urlParams.has("bitcut")) {
 		session.lowBitrateCutoff = parseInt(urlParams.get("bitratecutoff")) || parseInt(urlParams.get("bitcut")) || 300; // low bitrate cut off.
+		session.hiddenSceneViewBitrate = false;
 	}
 
 	if (urlParams.has("motionswitch") || urlParams.has("motiondetection")) {
 		// switch OBS to this scene when there is motion, and "solo view" this video in the VDO.Ninja auto-mixer, if used
 		session.motionSwitch = parseInt(urlParams.get("motionswitch")) || parseInt(urlParams.get("motiondetection")) || 15; // threshold of motion needed to trigger
+		session.hiddenSceneViewBitrate = false;
 	}
 
 	if (urlParams.has("motionrecord") || urlParams.has("recordmotion")) {
 		// switch OBS to this scene when there is motion, and "solo view" this video in the VDO.Ninja auto-mixer, if used
 		session.motionRecord = parseInt(urlParams.get("motionrecord")) || parseInt(urlParams.get("recordmotion")) || 15; // threshold of motion needed to trigger
+		session.hiddenSceneViewBitrate = false;
 	}
 
 	if (urlParams.has("pausepreview") || urlParams.has("dpp")) {
@@ -911,6 +1002,7 @@ async function main() {
 
 	if (urlParams.has("lowbitratescene") || urlParams.has("cutscene")) {
 		session.lowBitrateSceneChange = urlParams.get("lowbitratescene") || urlParams.get("cutscene") || "cutscene"; // low bitrate cut off.
+		session.hiddenSceneViewBitrate = false;
 		if (session.lowBitrateCutoff === false) {
 			session.lowBitrateCutoff = 300;
 		}
@@ -962,6 +1054,10 @@ async function main() {
 
 	if (urlParams.has("forceviewerlandscape")) {
 		session.keepIncomingVideosInLandscape = parseInt(urlParams.get("forceviewerlandscape")) || 270;
+	}
+	
+	if (urlParams.has("forceviewerportrait")) {
+		session.keepIncomingVideosInPortrait = parseInt(urlParams.get("forceviewerportrait")) || 90;
 	}
 
 	document.addEventListener("fullscreenchange", event => {
@@ -1064,7 +1160,11 @@ async function main() {
 	if (urlParams.has("midipush") || urlParams.has("midiout") || urlParams.has("mo")) {
 		session.midiOut = parseInt(urlParams.get("midipush")) || parseInt(urlParams.get("midiout")) || parseInt(urlParams.get("mo")) || true;
 	}
-
+	
+	if (urlParams.has("tc") || urlParams.has("timecode") || urlParams.has("showtimecode")) {
+		session.midiTimecode = urlParams.get("tc") || urlParams.get("timecode") || urlParams.get("showtimecode") || true;
+	}
+	
 	if (urlParams.has("nochunkediframestats")) {
 		session.chunkIframe = false;
 	}
@@ -1188,6 +1288,12 @@ async function main() {
 		session.screenshareType = urlParams.get("sstype") || urlParams.get("screensharetype");
 		session.screenshareType = parseInt(session.screenshareType) || false;
 	}
+	
+	if (urlParams.has("ssstyle") || urlParams.has("screensharestyle")) {
+		// wha type of screen sharing is used; track replace, iframe, or secondary try
+		session.screenshareStyle = urlParams.get("ssstyle") || urlParams.get("screensharestyle") || 1;
+		session.screenshareStyle = parseInt(session.screenshareStyle) || false;
+	}
 
 	if (urlParams.has("suppresslocalaudio")) {
 		session.suppressLocalAudioPlayback = true;
@@ -1256,14 +1362,27 @@ async function main() {
 	} else if (urlParams.has("layout")) {
 		if (!urlParams.get("layout")) {
 			session.accept_layouts = true;
-		}
-		try {
-			session.layout = JSON.parse(decodeURIComponent(urlParams.get("layout"))) || JSON.parse(urlParams.get("layout")) || {};
-		} catch (e) {
+			session.layout = {};
+		} else {
+			let decodedParam;
 			try {
-				session.layout = JSON.parse(urlParams.get("layout")) || {};
+				decodedParam = decodeURIComponent(urlParams.get("layout"));
 			} catch (e) {
-				session.layout = {};
+				decodedParam = urlParams.get("layout");
+			}
+			try {
+				session.layout = JSON.parse(decodedParam);
+			} catch (e) {
+				try {
+					const base64Decoded = atob(decodedParam);
+					try {
+						session.layout = JSON.parse(base64Decoded);
+					} catch (e) {
+						session.layout = base64Decoded;
+					}
+				} catch (e) {
+					session.layout = decodedParam;
+				}
 			}
 		}
 		console.warn("Warning: If using &layout with &broadcast, only the director's video will appear in the custom layout, which is likely not intended.");
@@ -1555,6 +1674,8 @@ async function main() {
 		// minutes
 		session.recordingInterval = urlParams.get("splitrecording") || 5; // 5 minutes
 		session.recordingInterval = parseInt(session.recordingInterval) || 1;
+		// For Mac: https://gist.github.com/steveseguin/8083172a20ad7c9ebcb449e22fc8fe67
+		// For Windows: https://gist.github.com/steveseguin/7ca1df1df9ec6042f27ecc8d258e3f30
 	}
 	if (urlParams.has("pcm")) {
 		session.pcm = true;
@@ -1703,6 +1824,23 @@ async function main() {
 	if (urlParams.has("datamode") || urlParams.has("dataonly")) {
 		// this disables all media in/out.
 		session.dataMode = true;
+	}
+	
+	if (urlParams.has("pseudoguest") || urlParams.has("pseudoscene")) {
+		session.videoDevice = 0;
+		session.audioDevice = 0;
+		getById("mainmenu").classList.add("hidden");
+		getById("header").classList.add("hidden");
+		getById("mainmenu").style.display = "none";
+		getById("header").style.display = "none";
+		session.showList = false;
+		session.autostart = true;
+		getById("controlButtons").classList.add("hidden");
+		getById("controlButtons").style.display = "none";
+		getById("miniTaskBar").classList.add("hidden");
+		getById("miniTaskBar").style.display = "none";
+		session.dedicatedControlBarSpace = false;
+		session.pseudoguest = true;
 	}
 
 	if (session.dataMode) {
@@ -2581,9 +2719,11 @@ async function main() {
 			session.style = 1;
 		}
 	}
+	// https://vdo.ninja/?fakeguests=10&room=faketestroom123&scene&border=10&padding=20&rounded
+	// https://vdo.ninja/?fakeusers=10&scene&room=test12342345ff
 
-	if (urlParams.has("fakeguests") || urlParams.has("fakefeeds")) {
-		var total = parseInt(urlParams.get("fakeguests")) || parseInt(urlParams.get("fakefeeds")) || 4;
+	if (urlParams.has("fakeguests") || urlParams.has("fakefeeds")  || urlParams.has("fakeusers")) {
+		var total = parseInt(urlParams.get("fakeguests")) || parseInt(urlParams.get("fakefeeds")) || parseInt(urlParams.get("fakeusers")) || 4;
 		session.fakeFeeds = [];
 		log("Creating " + total + " fake feeds");
 		for (var i = 0; i < total; i++) {
@@ -2592,6 +2732,7 @@ async function main() {
 			fakeElement.loop = true;
 			fakeElement.muted = true;
 			fakeElement.src = "./media/fakesteve.webm";
+			fakeElement.labelText = "Fake Steve\\n@steveseguin\\nhe\/him";
 			fakeElement.dataset.sid = fakeElement.id = parseInt(Math.random() * 10000000000);
 			session.fakeFeeds.push(fakeElement);
 		}
@@ -2631,8 +2772,7 @@ async function main() {
 	}
 
 	if (urlParams.has("include") && urlParams.get("include")) {
-		urlParams
-			.get("include")
+		urlParams.get("include")
 			.split(",")
 			.forEach(sid => {
 				var sidd = sid.split(":s")[0];
@@ -2870,7 +3010,23 @@ async function main() {
 		session.automute = urlParams.get("automute") || true;
 		session.micIsolatedAutoMute = []; // default auto mutes
 	}
-
+	
+	if (urlParams.has("noobsstream")){
+		session.obsState.streaming = false;
+	}
+	if (urlParams.has("noobsvirtual")){
+		session.obsState.virtualcam = false;
+	}
+	if (urlParams.has("noobsrecord")){
+		session.obsState.recording = false;
+	}
+	if (urlParams.has("noobssourceactive")){
+		session.obsState.sourceActive = false;
+	}
+	if (urlParams.has("noobsvisibility")){
+		session.obsState.visibility = false;
+	}
+	
 	if (window.obsstudio) {
 		session.disableWebAudio = true; // default true; might be useful to disable on slow or old computers?
 		session.audioMeterGuest = false;
@@ -2934,21 +3090,32 @@ async function main() {
 			//}
 
 			if (session.disableOBS === false) {
-				if (typeof document.visibilityState !== "undefined") {
-					session.obsState.visibility = document.visibilityState === "visible";
-				}
+				
 
 				getOBSDetails();
-
-				window.addEventListener("obsSourceVisibleChanged", obsSourceVisibleChanged);
-				window.addEventListener("obsSourceActiveChanged", obsSourceActiveChanged);
+				
 				window.addEventListener("obsSceneChanged", obsSceneChanged);
-				window.addEventListener("obsStreamingStarted", obsStreamingStarted);
-				window.addEventListener("obsStreamingStopped", obsStreamingStopped);
-				window.addEventListener("obsRecordingStarted", obsRecordingStarted);
-				window.addEventListener("obsRecordingStopped", obsRecordingStopped);
-				window.addEventListener("obsVirtualcamStarted", obsVirtualcamStarted);
-				window.addEventListener("obsVirtualcamStopped", obsVirtualcamStopped);
+				if (session.obsState.visibility!==false){
+					window.addEventListener("obsSourceVisibleChanged", obsSourceVisibleChanged);
+					if (typeof document.visibilityState !== "undefined") {
+						session.obsState.visibility = document.visibilityState === "visible";
+					}
+				}
+				if (session.obsState.sourceActive!==false){
+					window.addEventListener("obsSourceActiveChanged", obsSourceActiveChanged);
+				}
+				if (session.obsState.streaming!==false){
+					window.addEventListener("obsStreamingStarted", obsStreamingStarted);
+					window.addEventListener("obsStreamingStopped", obsStreamingStopped);
+				}
+				if (!session.obsState.recording!==false){
+					window.addEventListener("obsRecordingStarted", obsRecordingStarted);
+					window.addEventListener("obsRecordingStopped", obsRecordingStopped);
+				}
+				if (session.obsState.virtualcam!==false){
+					window.addEventListener("obsVirtualcamStarted", obsVirtualcamStarted);
+					window.addEventListener("obsVirtualcamStopped", obsVirtualcamStopped);
+				}
 			}
 		} catch (e) {
 			errorlog(e);
@@ -3017,6 +3184,18 @@ async function main() {
 			errorlog("variable css failed");
 		}
 	}
+	
+	if (urlParams.has("holdercolor")) {
+		try {
+			session.holderColor = urlParams.get("holdercolor") || session.borderColor || "#000";
+			if (parseInt(session.holderColor) == session.holderColor){
+				session.holderColor = "#"+session.holderColor;
+			}
+			document.querySelector(":root").style.setProperty("--video-holder-color", session.holderColor);
+		} catch (e) {
+			errorlog("variable css failed");
+		}
+	}
 
 	if (urlParams.has("color")) {
 		session.colorVideosBackground = urlParams.get("color") || session.borderColor || "#000";
@@ -3055,14 +3234,14 @@ async function main() {
 	}
 
 	try {
-		if (urlParams.has("darkmode") || urlParams.has("nightmode")) {
-			session.darkmode = urlParams.get("darkmode") || urlParams.get("nightmode") || null;
+		if (urlParams.has("darkmode") || urlParams.has("nightmode") ||  urlParams.has("darktheme")) {
+			session.darkmode = urlParams.get("darkmode") || urlParams.get("nightmode")  || urlParams.get("darktheme") || null;
 			if (session.darkmode === null || session.darkmode === "") {
 				session.darkmode = true;
 			} else if (darkmode == "false" || darkmode == "0" || darkmode == 0 || darkmode == "off") {
 				session.darkmode = false;
 			}
-		} else if (urlParams.has("lightmode") || urlParams.has("lightmode")) {
+		} else if (urlParams.has("lightmode") || urlParams.has("lighttheme")) {
 			session.darkmode = false;
 		} else if (window.obsstudio) {
 			session.darkmode = false; // prevent OBS from defaulting to dark mode, avoiding possible overlooked bugs.
@@ -3092,7 +3271,7 @@ async function main() {
 		if (session.videoDevice === null) {
 			session.videoDevice = "1";
 		} else if (session.videoDevice) {
-			session.videoDevice = session.videoDevice.toLowerCase().replace(/[\W]+/g, "_");
+			session.videoDevice = normalizeDeviceLabel(session.videoDevice);
 		}
 
 		if (session.videoDevice == "false") {
@@ -3137,7 +3316,7 @@ async function main() {
 		if (session.audioDevice === null) {
 			session.audioDevice = "1";
 		} else if (session.audioDevice) {
-			session.audioDevice = session.audioDevice.toLowerCase().replace(/[^-,'A-Za-z0-9]+/g, "_");
+			session.audioDevice = normalizeDeviceLabel(session.audioDevice);
 		}
 
 		if (session.audioDevice == "false") {
@@ -3222,6 +3401,13 @@ async function main() {
 	if (urlParams.has("autojoin") || urlParams.has("autostart") || urlParams.has("aj") || urlParams.has("as")) {
 		session.autostart = true;
 	}
+	
+	if (urlParams.has("blackout") || urlParams.has("blackoutmode") || urlParams.has("bo") || urlParams.has("bom")) {
+		getById("blackoutmode").classList.remove("hidden");
+		if (urlParams.get("blackout") || urlParams.get("blackoutmode") || urlParams.get("bo") || urlParams.get("bom")) {
+			blackoutMode();
+		}
+	}
 
 	if (session.dataMode) {
 		delayedStartupFuncs.push([joinDataMode]);
@@ -3256,8 +3442,20 @@ async function main() {
 		} else {
 			session.exclude = session.exclude.split(",");
 		}
-		log("exclude video playback");
+		log("exclude audio/video playback");
 		log(session.exclude);
+	}
+	
+	if (urlParams.has("excludeaudio") || urlParams.has("exaudio") || urlParams.has("silence")) {
+		session.excludeaudio = urlParams.get("excludeaudio") || urlParams.get("exaudio") || urlParams.get("silence");
+
+		if (!session.excludeaudio) {
+			session.excludeaudio = false;
+		} else {
+			session.excludeaudio = session.excludeaudio.split(",");
+		}
+		log("exclude audio playback");
+		log(session.excludeaudio);
 	}
 
 	if (urlParams.has("novideo") || urlParams.has("nv") || urlParams.has("hidevideo") || urlParams.has("showonly")) {
@@ -3282,6 +3480,7 @@ async function main() {
 		}
 		log("disable audio playback");
 	}
+	
 
 	if (urlParams.has("nodirectoraudio")) {
 		session.nodirectoraudio = true;
@@ -3379,6 +3578,17 @@ async function main() {
 	if (urlParams.has("nochunk") || urlParams.has("nochunked")) {
 		// viewer side
 		session.nochunk = true;
+	}
+	
+	if (urlParams.has("nochunkaudio") || urlParams.has("nochunkedaudio")) {
+		// viewer side
+		session.nochunkaudio = true;
+	}
+	
+	if (urlParams.has("audiobuffer") || urlParams.has("bufferaudio")) {
+		// viewer side
+		session.audioBuffer = urlParams.get("audiobuffer") || urlParams.get("bufferaudio") || 0;
+		session.audioBuffer = parseInt(session.audioBuffer);
 	}
 
 	//if (urlParams.has('viewchunked') || urlParams.has('viewchunk') || urlParams.has('allowchunked') || urlParams.has('allowchunk')) { // viewer side
@@ -3752,7 +3962,7 @@ async function main() {
 	}
 
 	if (urlParams.has("videobitrate") || urlParams.has("bitrate") || urlParams.has("vb")) {
-		session.bitrate = urlParams.get("videobitrate") || urlParams.get("bitrate") || urlParams.get("vb");
+		session.bitrate = urlParams.get("videobitrate") || urlParams.get("bitrate") || urlParams.get("vb") || 8000;
 		if (session.bitrate) {
 			if (session.view_set && session.bitrate.split(",").length > 1) {
 				session.bitrate_set = session.bitrate.split(",");
@@ -3860,8 +4070,8 @@ async function main() {
 		session.whipOutScreenShareCodec = session.whipOutScreenShareCodec.toLowerCase();
 	}
 
-	if (urlParams.has("mccodec") || urlParams.has("meshcastcodec") || urlParams.has("whipoutcodec") || urlParams.has("woc")) {
-		session.whipOutCodec = urlParams.get("mccodec") || urlParams.get("meshcastcodec") || urlParams.get("whipoutcodec") || urlParams.get("woc") || false;
+	if (urlParams.has("mccodec") || urlParams.has("meshcastcodec") || urlParams.has("whipoutcodec") || urlParams.has("whipoutvideocodec") || urlParams.has("woc") || urlParams.has("wovc")) {
+		session.whipOutCodec = urlParams.get("mccodec") || urlParams.get("meshcastcodec") || urlParams.get("whipoutcodec")  || urlParams.get("whipoutvideocodec") || urlParams.get("woc") || urlParams.get("wovc") || false;
 		getById("whipoutcodecGroupFlag").classList.add("hidden");
 	}
 
@@ -3876,6 +4086,11 @@ async function main() {
 			session.whipOutCodec = session.whipOutCodec.split(",");
 		}
 		getById("whipoutcodecGroupFlag").classList.add("hidden");
+	}
+	
+	if (urlParams.has("whipoutaudiocodec") || urlParams.has("woac")) {
+		session.whipOutAudioCodec = urlParams.get("whipoutaudiocodec") || urlParams.get("woac") || false;
+		// getById("whipoutaudiocodecGroupFlag").classList.add("hidden"); // havne't added this in yet as an actual html element
 	}
 
 	if (urlParams.has("mcab") || urlParams.has("mcaudiobitrate") || urlParams.has("meshcastab") || urlParams.has("meshcastaudiobitrate ") || urlParams.has("whipoutaudiobitrate") || urlParams.has("woab")) {
@@ -3964,6 +4179,20 @@ async function main() {
 		} catch (e) {
 			errorlog(e);
 		}
+	} else if (urlParams.has("fullhd") || urlParams.has("1080p")) {
+		session.quality = 0;
+		getById("gear_screen").parentNode.removeChild(getById("gear_screen"));
+		getById("gear_webcam").parentNode.removeChild(getById("gear_webcam"));
+		if (session.outboundVideoBitrate === false) {
+			session.outboundVideoBitrate = 4000;
+		}
+	} else if (urlParams.has("4k")) {
+		session.quality = -2;
+		getById("gear_screen").parentNode.removeChild(getById("gear_screen"));
+		getById("gear_webcam").parentNode.removeChild(getById("gear_webcam"));
+		if (session.outboundVideoBitrate === false) {
+			session.outboundVideoBitrate = 8000;
+		}
 	}
 
 	if (urlParams.has("sink")) {
@@ -3972,7 +4201,7 @@ async function main() {
 		session.outputDevice = urlParams.get("outputdevice") || urlParams.get("od") || urlParams.get("audiooutput") || null;
 
 		if (session.outputDevice) {
-			session.outputDevice = session.outputDevice.toLowerCase().replace(/[\W]+/g, "_");
+			session.outputDevice = normalizeDeviceLabel(session.outputDevice);
 		} else {
 			session.outputDevice = null;
 			getById("headphonesDiv3").style.display = "none"; //
@@ -3983,7 +4212,7 @@ async function main() {
 				enumerateDevices().then(function (deviceInfos) {
 					for (let i = 0; i !== deviceInfos.length; ++i) {
 						if (deviceInfos[i].kind === "audiooutput") {
-							if (deviceInfos[i].label.replace(/[\W]+/g, "_").toLowerCase().includes(session.outputDevice)) {
+							if (normalizeDeviceLabel(deviceInfos[i].label).includes(session.outputDevice)) {
 								session.sink = deviceInfos[i].deviceId;
 								log("AUDIO OUT DEVICE: " + deviceInfos[i].deviceId);
 								break;
@@ -4092,6 +4321,10 @@ async function main() {
 		// needs to happen the room and permaid applications
 		getById("header").style.display = "inherit";
 		getById("header").style.opacity = 1;
+		setTimeout(function(){
+			getById("header").classList.remove("hidden");
+			getById("head2").classList.remove("hidden");
+		},100);
 	} else if (window.obsstudio) {
 		getById("header").style.display = "none";
 		getById("header").style.opacity = 0;
@@ -4141,10 +4374,16 @@ async function main() {
 			getById("controlButtons").classList.remove("hidden");
 		}
 	}
+	
+	if (urlParams.has("nocontrolbar")) {
+		getById("controlButtons").classList.add("hidden");
+		getById("controlButtons").style.display = "none";
+		session.dedicatedControlBarSpace = false;
+	}
 
 	if (urlParams.has("channels")) {
 		// must be loaded before channelOffset
-		session.audioChannels = parseInt(urlParams.get("channels")); // for audio output ; not input. see: &channelcount instead.
+		session.audioChannels = parseInt(urlParams.get("channels")) || 8; // for audio output ; not input. see: &channelcount instead.
 		session.offsetChannel = 0;
 		log("max channels is 32; channels offset");
 		session.audioEffects = true;
@@ -4377,7 +4616,7 @@ async function main() {
 		}
 		session.fadein = true;
 		document.querySelector(":root").style.setProperty("--fadein-speed", 0.5);
-		setInterval(function () {
+		session.activeSpeakerInterval = setInterval(function () {
 			activeSpeaker(false);
 		}, 100);
 	} else if (urlParams.has("noisegate") || urlParams.has("gating") || urlParams.has("gate") || urlParams.has("ng")) {
@@ -4393,7 +4632,7 @@ async function main() {
 			session.quietOthers = 1;
 			session.audioEffects = true;
 			//session.audioMeterGuest = true;
-			setInterval(function () {
+			session.activeSpeakerInterval = setInterval(function () {
 				activeSpeaker(false);
 			}, 100);
 		} else if (!session.quietOthers) {
@@ -4402,7 +4641,7 @@ async function main() {
 		} else {
 			session.audioEffects = true;
 			//session.audioMeterGuest = true;
-			setInterval(function () {
+			session.activeSpeakerInterval = setInterval(function () {
 				activeSpeaker(false);
 			}, 100);
 		}
@@ -4447,6 +4686,18 @@ async function main() {
 		} else if (session.widget) {
 			session.widget = decodeURI(session.widget) || false;
 			log(session.widget);
+		}
+	}
+	
+	if (urlParams.has("widgetleft")) {
+		session.widgetleft = true;
+	}
+	if (urlParams.get("widgetwidth")) { // default is 25%
+		try{
+			session.widgetwidth = parseFloat(urlParams.get("widgetwidth"));
+			document.querySelector(":root").style.setProperty("--widget-width", session.widgetwidth+"%");
+		} catch(e){
+			errorlog(e);
 		}
 	}
 
@@ -4618,7 +4869,7 @@ async function main() {
 		if (session.iframetarget) {
 			session.iframetarget = decodeURIComponent(session.iframetarget);
 		} else {
-			session.iframetarget = window.location.hostname;
+			session.iframetarget = (window.location.protocol === "file:") ? "*" : window.location.origin;
 		}
 	}
 
@@ -5001,9 +5252,50 @@ async function main() {
 		session.whepHost = urlParams.get("hostwhep") || urlParams.get("whepout") || session.streamID || false;
 	}
 
+	if (urlParams.get("mediamtx")){
+		session.mediamtx = urlParams.get("mediamtx");
+	} 
+	
+	if (session.mediamtx){
+		if (!session.mediamtx.includes(".") && !session.mediamtx.includes("localhost")){
+			session.mediamtx += ".com";
+		}
+		if (!session.mediamtx.includes(":")){
+			session.mediamtx += ":8889";
+		}
+		if (!session.whipOutput){
+			if (!(session.mediamtx.startsWith("https://") || session.mediamtx.startsWith("http://"))){
+				if (session.mediamtx.startsWith("localhost:")){
+					session.whipOutput = "http://"+session.mediamtx+"/"+session.streamID+"/whip";
+					
+					if (!session.whipoutSettings){
+						session.whipoutSettings = { type: "whep", url: "http://"+session.mediamtx+"/"+session.streamID+"/whep" };
+						console.log("WHIP OUT: "+session.whipOutput+", WHEP SHARE: "+session.whipoutSettings.url);
+					}
+					
+				} else {
+					session.whipOutput = "https://"+session.mediamtx+"/"+session.streamID+"/whip";
+				}
+			} else if (session.mediamtx.endsWith("/")){
+				session.whipOutput = session.mediamtx+session.streamID+"/whip";
+			} else {
+				session.whipOutput = session.mediamtx+"/"+session.streamID+"/whip";
+			}
+		}
+		if (!session.whipoutSettings){
+			session.whipoutSettings = { type: "whep", url: "https://"+session.mediamtx+"/"+session.streamID+"/whep" };
+			console.log("WHIP OUT: "+session.whipOutput+", WHEP SHARE: "+session.whipoutSettings.url);
+		}
+		if (session.stereo === false){ 
+			if (!session.whipOutAudioCodec || (session.whipOutAudioCodec=="opus")){
+				session.stereo=3;
+			}
+		}
+	}
+
 	if (urlParams.has("effects") || urlParams.has("effect")) {
 		session.effect = urlParams.get("effects") || urlParams.get("effect") || null;
-	} else if (urlParams.has("zoom")) {
+	} else if (urlParams.has("zoom") || urlParams.has("digitalzoom")) {
 		session.effect = "7";
 	}
 
@@ -5292,13 +5584,46 @@ async function main() {
 	}
 
 	if (urlParams.has("screensharequality") || urlParams.has("ssq")) {
-		if (urlParams.get("screensharequality") || urlParams.get("ssq")) {
-			session.screensharequality = urlParams.get("screensharequality") || urlParams.get("ssq");
+		session.screensharequality = urlParams.get("screensharequality") || urlParams.get("ssq") || "0";
+		
+		if (session.screensharequality.toLowerCase() == "4k") {
+			session.screensharequality = -2;
+		} else if (session.screensharequality.toLowerCase() == "2160p") {
+			session.screensharequality = -2;
+		} else if (session.screensharequality.toLowerCase() == "2160") {
+			session.screensharequality = -2;
+		} else if (session.screensharequality.toLowerCase() == "2k") {
+			session.screensharequality = -3;
+		} else if (session.screensharequality.toLowerCase() == "1440p") {
+			session.screensharequality = -3;
+		} else if (session.screensharequality.toLowerCase() == "1440") {
+			session.screensharequality = -3;
+		} else if (session.screensharequality.toLowerCase() == "hd") {
+			session.screensharequality = 1;
+		} else if (session.screensharequality.toLowerCase() == "720p") {
+			session.screensharequality = 1;
+		} else if (session.screensharequality.toLowerCase() == "720") {
+			session.screensharequality = 1;
+		} else if (session.screensharequality.toLowerCase() == "fullhd") {
+			session.screensharequality = 0;
+		} else if (session.screensharequality.toLowerCase() == "1080p") {
+			session.screensharequality = 0;
+		} else if (session.screensharequality.toLowerCase() == "1080") {
+			session.screensharequality = 0;
+		} else if (session.screensharequality.toLowerCase() == "high") {
+			session.screensharequality = 0;
+		} else if (session.screensharequality.toLowerCase() == "360p") {
+			session.screensharequality = 2;
+		} else if (session.screensharequality.toLowerCase() == "360") {
+			session.screensharequality = 2;
+		} else if (session.screensharequality.toLowerCase() == "low") {
+			session.screensharequality = 2;
+		} else {
 			session.screensharequality = parseInt(session.screensharequality) || 0;
-			try {
-				getById("gear_screen").parentNode.removeChild(getById("gear_screen"));
-			} catch (e) {}
 		}
+		try {
+			getById("gear_screen").parentNode.removeChild(getById("gear_screen"));
+		} catch (e) {}
 	}
 
 	if (urlParams.has("screensharebitrate") || urlParams.has("ssbitrate")) {
@@ -5460,6 +5785,13 @@ async function main() {
 			} else if (session.chatbutton === false) {
 				getById("chatbutton").classList.add("hidden");
 			}
+			
+			if (session.hangupbutton === true) {
+				getById("controlButtons").classList.remove("hidden");
+				getById("hangupbutton").classList.remove("hidden");
+				getById("hangupbutton").className = "float";
+			}
+			
 		} else if (session.permaid === null && session.roomid == "") {
 			if (!session.cleanOutput) {
 				//	getById("head3").classList.remove('hidden');
@@ -5546,6 +5878,12 @@ async function main() {
 		} else if (session.chatbutton === false) {
 			getById("chatbutton").classList.add("hidden");
 		}
+		
+		if (session.hangupbutton === true) {
+			getById("controlButtons").classList.remove("hidden");
+			getById("hangupbutton").classList.remove("hidden");
+			getById("hangupbutton").className = "float";
+		}
 	}
 
 	if (urlParams.has("nofileshare") || urlParams.has("nodownloads") || urlParams.has("nofiles")) {
@@ -5582,6 +5920,10 @@ async function main() {
 		getById("header").style.display = "none";
 		getById("mainmenu").style.opacity = 0;
 		getById("header").style.opacity = 0;
+	}
+	
+	if (urlParams.has("hideusermenu") || urlParams.has("nousermenu") || urlParams.has("hum")) {
+		getById("advancedOptionsGeneral").classList.add("hidden");
 	}
 
 	if (session.view || session.whepInput) {
@@ -6348,7 +6690,7 @@ async function main() {
 
 		if ("sendMessage" in e.data) {
 			// webrtc send to viewers
-			session.sendMessage(e.data);
+			session.sendMessage(e.data.sendMessage);
 		}
 
 		if ("sendRequest" in e.data) {
@@ -6376,7 +6718,7 @@ async function main() {
 
 		if ("sendPeers" in e.data) {
 			// webrtc send message to every connected peer; like send and request; a hammer vs a knife.
-			session.sendPeers(e.data);
+			session.sendPeers(e.data.sendPeers);
 		}
 
 		if ("reload" in e.data) {
@@ -7026,7 +7368,7 @@ async function main() {
 	if (session.midiHotkeys || session.midiOut !== false) {
 		var script = document.createElement("script");
 		script.onload = function () {
-			WebMidi.enable()
+			WebMidi.enable({ sysex: true })
 				.then(() => {
 					WebMidi.timeStart = Date.now(); // start time
 
@@ -7045,6 +7387,7 @@ async function main() {
 							try {
 								var input = WebMidi.inputs[i];
 								input.addListener("midimessage", function (e) {
+									//log(e);
 									e.timestamp += WebMidi.timeStart;
 									sendRawMIDI(e);
 									//var msg = {};
@@ -7105,7 +7448,7 @@ async function main() {
 		var script = document.createElement("script");
 		script.src = "./thirdparty/webmidi3.js"; // dynamically load this only if its needed. Keeps loading time down.
 		script.onload = function () {
-			WebMidi.enable()
+			WebMidi.enable({ sysex: true })
 				.then(() => console.log(WebMidi.outputs))
 				.catch(errorlog);
 		};
@@ -7246,6 +7589,38 @@ async function main() {
 			log("Network connectivity has been restored.");
 		}
 	});
+	
+	
+	let wakeLockObject = null;
+	async function acquireWakeLock() {
+	  if ('wakeLock' in navigator) {
+		try {
+		  wakeLockObject = await navigator.wakeLock.request('screen');
+		  log('Wake Lock is active');
+		} catch (err) {
+		  errorlog(err);
+		}
+	  } else {
+		warnlog('Wake Lock API is not supported in this browser');
+	  }
+	}
+	function handleVisibilityChangeWakeLock() {
+	  if (wakeLockObject !== null && document.visibilityState === 'visible') {
+		acquireWakeLock();
+	  }
+	}
+	function releaseWakeLock() {
+	  if (wakeLockObject) {
+		wakeLockObject.release()
+		  .then(() => {
+			wakeLockObject = null;
+			log('Wake Lock is released');
+		  })
+		  .catch((err) => {
+			errorlog(err);
+		  });
+	  }
+	}
 
 	document.addEventListener("DOMContentLoaded", function () {
 		var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
@@ -7272,8 +7647,13 @@ async function main() {
 				lazyVideoObserver.observe(lazyVideo);
 			});
 		}
+		
+		acquireWakeLock();
+		// Re-acquire wake lock when the page becomes visible again, as that's a requirement for wakelock
+		document.addEventListener('visibilitychange', handleVisibilityChangeWakeLock);
+		
 	});
-
+	
 	document.addEventListener("dragstart", event => {
 		var url = event.target.href || event.target.value;
 		if (!url || !url.startsWith("https://")) return;

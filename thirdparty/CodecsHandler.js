@@ -83,113 +83,125 @@ var CodecsHandler = (function() {
 				});
 			}
 			var LINE = line.toUpperCase();
-			if (LINE.indexOf('VP8/90000') !== -1 && !info.vp8LineNumber) {
+			if (LINE.includes('VP8/90000') && !info.vp8LineNumber) {
 				info.vp8LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('VP9/90000') !== -1 && !info.vp9LineNumber) {
+			if (LINE.includes('VP9/90000') && !info.vp9LineNumber) {
 				info.vp9LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('H264/90000') !== -1 && !info.h264LineNumber) {
+			if (LINE.includes('H264/90000') && !info.h264LineNumber) {
 				info.h264LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('H265/90000') !== -1 && !info.h265LineNumber) {
+			if (LINE.includes('H265/90000') && !info.h265LineNumber) {
 				info.h265LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('AV1X/90000') !== -1 && !info.av1LineNumber) {
+			if (LINE.includes('AV1X/90000') && !info.av1LineNumber) {
 				info.av1LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-			} else if (LINE.indexOf('AV1/90000') !== -1 && !info.av1LineNumber) {
+			} else if (LINE.includes('AV1/90000') && !info.av1LineNumber) {
 				info.av1LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('RED/90000') !== -1 && !info.redLineNumber) {
-			    info.redLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			if (LINE.includes('RED/90000') && !info.redLineNumber) {
+				info.redLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (LINE.indexOf('ULPFEC/90000') !== -1 && !info.ulpfecLineNumber) {
-			    info.ulpfecLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			if (LINE.includes('ULPFEC/90000') && !info.ulpfecLineNumber) {
+				info.ulpfecLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
 		});
 		return info;
 	}
 	
-	function preferAudioCodec(sdp, codec, useRed=false, useUlpfec=false) {
-		if (codec) {
-			codec = codec.toLowerCase();
-		}
+	function preferAudioCodec(sdp, codec, useRed = false, useUlpfec = false) {
+		codec = codec ? codec.toLowerCase() : null;
 		var info = splitAudioLines(sdp);
 		if (!info.audioCodecNumbers) {
 			return sdp;
 		}
+
 		var preferCodecNumber = '';
 		var errorCorrectionNumbers = [];
+
+		// Set preferred codec number
 		if (codec && info[codec + 'LineNumber']) {
 			preferCodecNumber = info[codec + 'LineNumber'];
 		}
-		if (useRed && info.redPcmLineNumber) {
-			errorCorrectionNumbers.push(info.redPcmLineNumber);
-		}
-		if (useRed && info.redLineNumber && !info.redPcmLineNumber) {
-			errorCorrectionNumbers.push(info.redLineNumber);
+
+		// Handle RED/ULPFEC error correction
+		if (useRed && info.redLineNumber) {
+			if (info.redPcmLineNumber) {
+				errorCorrectionNumbers.push(info.redPcmLineNumber);
+			} else if (info.redLineNumber) {
+				errorCorrectionNumbers.push(info.redLineNumber);
+			}
 		}
 		if (useUlpfec && info.ulpfecLineNumber) {
 			errorCorrectionNumbers.push(info.ulpfecLineNumber);
 		}
-		var newOrder = [preferCodecNumber].concat(errorCorrectionNumbers);
+
+		// Set codec order: preferred codec + error correction + others
+		var newOrder = [].concat(errorCorrectionNumbers).concat(preferCodecNumber).filter(Boolean);
 		info.audioCodecNumbers.forEach(function(codecNumber) {
 			if (!newOrder.includes(codecNumber)) {
 				newOrder.push(codecNumber);
 			}
 		});
-		var newLine = info.audioCodecNumbersOriginal.split('SAVPF')[0] + 'SAVPF ' + newOrder.join(' ').trim();
+
+		// Replace SDP line with updated codec order
+		var newLine = info.audioCodecNumbersOriginal.split('SAVPF')[0] + 'SAVPF ' + newOrder.join(' ');
 		sdp = sdp.replace(info.audioCodecNumbersOriginal, newLine);
-		
+
 		return sdp;
 	}
 	
 	function splitAudioLines(sdp) {
-        var info = {};
-        sdp.split('\n').forEach(function(line) {
-            if (line.indexOf('m=audio') === 0) {
-                info.audioCodecNumbers = [];
-                line.split('SAVPF')[1].split(' ').forEach(function(codecNumber) {
-                    codecNumber = codecNumber.trim();
-                    if (!codecNumber || !codecNumber.length) return;
-                    info.audioCodecNumbers.push(codecNumber);
-                    info.audioCodecNumbersOriginal = line;
-                });
-            }
+		var info = {};
+		sdp.split('\n').forEach(function(line) {
+			if (line.indexOf('m=audio') === 0) {
+				info.audioCodecNumbers = [];
+				line.split('SAVPF')[1].split(' ').forEach(function(codecNumber) {
+					codecNumber = codecNumber.trim();
+					if (!codecNumber || !codecNumber.length) return;
+					info.audioCodecNumbers.push(codecNumber);
+					info.audioCodecNumbersOriginal = line;
+				});
+			}
 			var LINE = line.toLowerCase();
-            if (LINE.indexOf('opus/48000') !== -1 && !info.opusLineNumber) {
-                info.opusLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-            if (LINE.indexOf('isac/32000') !== -1 && !info.isacLineNumber) {
-                info.isacLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-            if (LINE.indexOf('g722/8000') !== -1 && !info.g722LineNumber) {
-                info.g722LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-			if (LINE.indexOf('pcmu/8000') !== -1 && !info.pcmuLineNumber) {
-                info.pcmuLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-			if (LINE.indexOf('pcma/8000') !== -1 && !info.pcmaLineNumber) {
-                info.pcmaLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-			if (LINE.indexOf('red/48000') !== -1 && !info.redLineNumber) {
-                info.redLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
-            }
-			if (LINE.indexOf('ulpfec/48000') !== -1 && !info.ulpfecLineNumber) {
+			if (LINE.includes('opus/48000') && !info.opusLineNumber) {
+				info.opusLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('isac/32000') && !info.isacLineNumber) {
+				info.isacLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('g722/8000') && !info.g722LineNumber) {
+				info.g722LineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('pcmu/8000') && !info.pcmuLineNumber) {
+				info.pcmuLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('pcma/8000') && !info.pcmaLineNumber) {
+				info.pcmaLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('red/48000') && !info.redLineNumber) {
+				info.redLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
+			}
+			if (LINE.includes('ulpfec/48000') && !info.ulpfecLineNumber) {
 				info.ulpfecLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (line.indexOf('red/8000') !== -1 && !info.redPcmLineNumber) {
+			if (LINE.includes('red/8000') && !info.redPcmLineNumber) {
 				info.redPcmLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-			if (line.indexOf('ulpfec/8000') !== -1 && !info.ulpfecLineNumber) {
+			if (LINE.includes('ulpfec/8000') && !info.ulpfecLineNumber) {
 				info.ulpfecLineNumber = line.replace('a=rtpmap:', '').split(' ')[0];
 			}
-        });
-        return info;
-    }
+		});
+		return info;
+	}
+	
+	function extractSdp(sdpLine, pattern) {
+		var result = sdpLine.match(pattern);
+		return result && result.length === 2 ? result[1] : null;
+	}
 	
 	function addRedForPcmToSdp(sdp, info, redPcmLine) {
-		// Ensure RED for PCM is not already the first codec
 		if (!info.audioCodecNumbers.includes(redPcmLine)) {
 			var newOrder = info.audioCodecNumbers.filter(codecNumber => codecNumber !== redPcmLine);
 			newOrder.unshift(redPcmLine); // Add RED for PCM at the start
@@ -198,11 +210,7 @@ var CodecsHandler = (function() {
 		}
 		return sdp;
 	}
-    
-    function extractSdp(sdpLine, pattern) {
-        var result = sdpLine.match(pattern);
-        return (result && result.length == 2)? result[1]: null;
-    }
+
 
     function disableNACK(sdp) {
         if (!sdp || typeof sdp !== 'string') {
@@ -401,116 +409,71 @@ var CodecsHandler = (function() {
 		
         return sdp;
     }
+	
+	function processOpus(sdpLines, opusPayload, opusIndex, codecType, params, debug){
+		var opusFmtpLineIndex = findLine(sdpLines, 'a=fmtp:' + opusPayload.toString());
+		if (opusFmtpLineIndex === null) {
+			return sdpLines;
+		}
 
-    function setOpusAttributes(sdp, params, debug=false) { 
-        params = params || {};
-
-        var sdpLines = sdp.split('\r\n');
-
-        var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000');
-        var opusPayload;
-        if (opusIndex) {
-            opusPayload = getCodecPayloadType(sdpLines[opusIndex]);
-        }
-
-        if (!opusPayload) {
-            return sdp;
-        }
-
-        var opusFmtpLineIndex = findLine(sdpLines, 'a=fmtp:' + opusPayload.toString());
-        if (opusFmtpLineIndex === null) {
-            return sdp;
-        }
-
-        var appendOpusNext = '';
+		var appendOpusNext = '';
 		
 		// Please see https://tools.ietf.org/html/rfc7587 for more details on OPUS settings
 		
-	
 		if (typeof params.minptime != 'undefined') {  // max packet size in milliseconds
 			if (params.minptime != false) {
 				appendOpusNext += ';minptime:' + params.minptime; // 3, 5, 10, 20, 40, 60 and the default is 120. (20 is minimum recommended for webrtc)
 			}
-        }
+		}
 		
 		if (typeof params.maxptime != 'undefined') {  // max packet size in milliseconds
 			if (params.maxptime != false) {
 				appendOpusNext += ';maxptime:' + params.maxptime; // 3, 5, 10, 20, 40, 60 and the default is 120. (20 is minimum recommended for webrtc)
 			}
-        }
+		}
 		
 		if (typeof params.ptime != 'undefined') {  // packet size; webrtc doesn't support less than 10 or 20 I think.
 			if (params.ptime != false) {
 				appendOpusNext += ';ptime:' + params.ptime; 
 			}
-        }
-		
-		if (typeof params.stereo != 'undefined'){
-			if (params.stereo==0){  // &stereo=0
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=0", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=0", "");
-				
-				if (sdpLines[opusFmtpLineIndex].split(";stereo=0").length==1){
-					appendOpusNext += ';stereo=0';  // defaults to 0
-				}
-				if (sdpLines[opusFmtpLineIndex].split(";sprop-stereo=0").length==1){
-					appendOpusNext += ';sprop-stereo=0';  // defaults to 0
-				}
-			} else if (params.stereo==1){ // &stereo=1
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=0", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=0", "");
-				
-				if (sdpLines[opusFmtpLineIndex].split(";stereo=1").length==1){
-					appendOpusNext += ';stereo=1'; // defaults to 0
-				}
-				if (sdpLines[opusFmtpLineIndex].split(";sprop-stereo=1").length==1){
-					appendOpusNext += ';sprop-stereo=1'; // defaults to 0
-				}
-			} else if (params.stereo==2){ // &stereo=4
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=0", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=0", "");
-				
-				sdpLines[opusIndex] = sdpLines[opusIndex].replace("opus/48000/2", "multiopus/48000/6");
-				if (sdpLines[opusFmtpLineIndex].split(";channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2").length==1){
-					appendOpusNext += ';channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2';  // Multi-channel 5.1 audio
-				}
-			} else if (params.stereo==3){ // &stereo=8
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=1", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";stereo=0", "");
-				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace(";sprop-stereo=0", "");
-			
-				sdpLines[opusIndex] = sdpLines[opusIndex].replace("opus/48000/2", "multiopus/48000/8");
-				if (sdpLines[opusFmtpLineIndex].split(";channel_mapping=0,6,1,2,3,4,5,7;num_streams=5;coupled_streams=3").length==1){
-					appendOpusNext += ';channel_mapping=0,6,1,2,3,4,5,7;num_streams=5;coupled_streams=3';  // Multi-channel 5.1 audio
-				}
-			}
-			
 		}
 		
-        if (typeof params.maxaveragebitrate != 'undefined') {
+		if (typeof params.stereo != 'undefined'){
+			// Remove existing stereo settings
+			sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex]
+				.replace(/;stereo=[01]/g, '')
+				.replace(/;sprop-stereo=[01]/g, '');
+
+			if (params.stereo == 1){
+				appendOpusNext += ';stereo=1;sprop-stereo=1';
+			} else if (params.stereo == 0){
+				appendOpusNext += ';stereo=0;sprop-stereo=0';
+			} else if (params.stereo == 2 && codecType === 'OPUS'){
+				sdpLines[opusIndex] = sdpLines[opusIndex].replace("opus/48000/2", "multiopus/48000/6");
+				appendOpusNext += ';channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2';
+			} else if (params.stereo == 3 && codecType === 'OPUS'){
+				sdpLines[opusIndex] = sdpLines[opusIndex].replace("opus/48000/2", "multiopus/48000/8");
+				appendOpusNext += ';channel_mapping=0,6,1,2,3,4,5,7;num_streams=5;coupled_streams=4';
+			}
+		}
+		
+		if (typeof params.maxaveragebitrate != 'undefined') {
 			if (sdpLines[opusFmtpLineIndex].split("maxaveragebitrate=").length==1){
 				appendOpusNext += ';maxaveragebitrate=' + params.maxaveragebitrate; // default 32000? (kbps)
 			}
-        }
+		}
 
-        if (typeof params.maxplaybackrate != 'undefined') {
+		if (typeof params.maxplaybackrate != 'undefined') {
 			if (sdpLines[opusFmtpLineIndex].split("maxplaybackrate=").length==1){
 				appendOpusNext += ';maxplaybackrate=' + params.maxplaybackrate; // Default should be 48000 (hz) , 8000 to 48000 are valid options
 			}
-        }
+		}
 
-        if (typeof params.cbr != 'undefined') {
+		if (typeof params.cbr != 'undefined') {
 			if (sdpLines[opusFmtpLineIndex].split("cbr=").length==1){
 				appendOpusNext += ';cbr=' + params.cbr; // default is 0 (vbr)
 			}
-        }
+		}
 		
 		if (typeof params.dtx != 'undefined') {
 			if (params.dtx){
@@ -518,25 +481,58 @@ var CodecsHandler = (function() {
 					appendOpusNext += ';usedtx=1';
 				}
 			}
-        }
+		}
 
-        if (typeof params.useinbandfec != 'undefined') {  // useful for handling packet loss
+		if (typeof params.useinbandfec != 'undefined') {  // useful for handling packet loss
 			if (sdpLines[opusFmtpLineIndex].split("useinbandfec=").length==1){
 				appendOpusNext += ';useinbandfec=' + params.useinbandfec;  // Defaults to 0
 			} else {
 				sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].replace("useinbandfec="+(params.useinbandfec ? 0 : 1), "useinbandfec="+params.useinbandfec);
 			}
-        }
+		}
 
-        sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex].concat(appendOpusNext);
-		
+		if (appendOpusNext) {
+			sdpLines[opusFmtpLineIndex] = sdpLines[opusFmtpLineIndex] + appendOpusNext;
+		}
+
 		if (debug){
-			console.log("Adding to SDP (audio): "+appendOpusNext+" --> Result: "+sdpLines[opusFmtpLineIndex]);
+			console.log("Adding to SDP (" + codecType + "): "+appendOpusNext+" --> Result: "+sdpLines[opusFmtpLineIndex]);
+		}
+		return sdpLines;
+	}
+
+	function setOpusAttributes(sdp, params, debug=false) { 
+		params = params || {};
+
+		var sdpLines = sdp.split('\r\n');
+
+		var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000');
+		var opusPayload;
+		if (opusIndex) {
+			opusPayload = getCodecPayloadType(sdpLines[opusIndex]);
 		}
 		
-        sdp = sdpLines.join('\r\n');
-        return sdp;
-    }
+		var redIndex = findLine(sdpLines, 'a=rtpmap', 'red/48000');
+		var redPayload;
+		if (redIndex) {
+			redPayload = getCodecPayloadType(sdpLines[redIndex]);
+		}
+
+		if (!opusPayload && !redPayload) {
+			return sdp;
+		}
+		
+		if (opusPayload){
+			if (debug) console.log("Processing OPUS codec");
+			sdpLines = processOpus(sdpLines, opusPayload, opusIndex, "OPUS", params, debug);
+		}
+		if (redPayload){
+			if (debug) console.log("Processing RED codec");
+			sdpLines = processOpus(sdpLines, redPayload, redIndex, "RED", params, debug);
+		}
+		
+		return sdpLines.join('\r\n');
+	}
 	
 	
 	function getOpusBitrate(sdp) { 
@@ -637,9 +633,63 @@ var CodecsHandler = (function() {
 		modifiedSDP = modifiedSDP.replace("a=rtpmap:106 CN/32000\r\n", "").replace("a=rtpmap:105 CN/16000\r\n", "").replace("a=rtpmap:13 CN/8000\r\n", "").replace(" 106 105 13", "");
 		return modifiedSDP;
 	}
+	
+	function modifySdp(sdp, disableAudio = false, disableVideo = false) {
+		if (!sdp || typeof sdp !== 'string') {
+			throw 'Invalid arguments.';
+		}
+		let sdpLines = sdp.split('\r\n');
+		let modifiedLines = [];
+		let inAudioSection = false;
+		let inVideoSection = false;
+		let bundleIds = [];
 
+		for (let line of sdpLines) {
+			if (line.startsWith('m=audio')) {
+				inAudioSection = true;
+				inVideoSection = false;
+				if (!disableAudio) {
+					modifiedLines.push(line);
+					bundleIds.push('0');
+				}
+			} else if (line.startsWith('m=video')) {
+				inAudioSection = false;
+				inVideoSection = true;
+				if (!disableVideo) {
+					modifiedLines.push(line);
+					bundleIds.push('1');
+				} else {
+					modifiedLines.push(''); // Add a line break if video is disabled
+				}
+			} else if (inVideoSection && disableVideo) {
+				continue; // Skip video lines if video is disabled
+			} else if (line.startsWith('a=group:')) {
+				// Skip existing group lines, we'll add updated ones later
+			} else if (inAudioSection && disableAudio) {
+				// Skip audio lines if audio is disabled
+			} else {
+				modifiedLines.push(line);
+			}
+		}
+		const tLineIndex = modifiedLines.findIndex(line => line.startsWith('t='));
+		if (bundleIds.length > 0) {
+			modifiedLines.splice(tLineIndex + 1, 0, 
+				`a=group:BUNDLE ${bundleIds.join(' ')}`,
+				`a=group:LS ${bundleIds.join(' ')}`
+			);
+		}
+
+		// Ensure there's a line break at the end
+		if (modifiedLines[modifiedLines.length - 1] !== '') {
+			modifiedLines.push('');
+		}
+
+		return modifiedLines.join('\r\n');
+	}
 	
     return {
+		modifySdp: modifySdp,
+		
         disableNACK: disableNACK,
 		
 		disablePLI: disablePLI,
