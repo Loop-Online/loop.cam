@@ -2409,7 +2409,9 @@ label {
 	height: 200px;
 	text-align: center;
 	font-size: 100%;
-	transition: box-shadow 0.1s ease-in-out;
+	transition: all 0.1s ease-in-out;
+	border-radius: 16px;
+	background-color: var(--discord-grey-7);
 }
 
 .column:hover {
@@ -5216,10 +5218,12 @@ input[type='checkbox'], input[type='radio'] {
 
 .darktheme .card {
 	background-color: var(--discord-grey-7);
+	border-radius: 16px;
 }
 
 .card {
 	background-color: var(--lighttheme-3);
+	border-radius: 16px;
 }
 
 .darktheme .container-inner {
